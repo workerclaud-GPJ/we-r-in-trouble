@@ -22,6 +22,7 @@ local Types = require(Shared.Types)
 local Remotes = require(Shared.Remotes)
 local Cleanup = require(Shared.Util.Cleanup)
 local Geometry = require(Shared.Util.Geometry)
+local Signal = require(Shared.Util.Signal)
 
 local MapService = require(script.Parent.MapService)
 local PlayerStateService = require(script.Parent.PlayerStateService)
@@ -29,12 +30,17 @@ local RoundState = require(script.Parent.RoundState)
 local Hud = require(script.Parent.Hud)
 local VolumeService = require(script.Parent.VolumeService)
 local EventService = require(script.Parent.EventService)
+local RouteToppleService = require(script.Parent.RouteToppleService)
 
 local Attr = Contract.Attr
 local ORDER = Config.Stages.ORDER
 local IMP = Config.Impact
 
 local DisasterService = {}
+
+-- Fired for every server ScreenEffect "Shake" (stageId, intensity, duration). ItemService
+-- nudges lying physics items with it (Features.ItemPhysics); no listener = no effect.
+DisasterService.Shake = Signal.new() :: Signal.Signal<string, number, number>
 
 local disaster: Types.DisasterDef? = nil
 local matchScope: Cleanup.Cleanup? = nil
@@ -255,6 +261,9 @@ runComponent = function(comp: Types.HazardComponent, scope: Cleanup.Cleanup, dur
 		for _, player in PlayerStateService.teamMembers() do
 			remote:FireClient(player, payload)
 		end
+		if payload.effect == "Shake" then
+			DisasterService.Shake:Fire(DisasterService.currentStage(), payload.intensity, payload.duration)
+		end
 	elseif comp.type == "RisingVolume" then
 		local steps: { Types.VolumeStep } = comp.steps or {}
 		for _, step in steps do
@@ -330,6 +339,7 @@ local function enterStage(index: number, final: boolean)
 	if stageId == Config.Events.STAGE then
 		EventService.schedule(scope)
 	end
+	RouteToppleService.onStage(stageId) -- no-op unless Config.Features.RouteTopple
 end
 
 -- Moves to `stageId`. Forward jumps fast-forward through skipped stages (§4.1);
@@ -366,6 +376,7 @@ function DisasterService.start(def: Types.DisasterDef, startedAt: number)
 	end
 	local scope = Cleanup.new()
 	matchScope = scope
+	RouteToppleService.begin(def.id, hazardsEnabled) -- no-op unless Config.Features.RouteTopple
 	if def.volume and hazardsEnabled then
 		VolumeService.begin(def.volume)
 		scope:add(VolumeService.stop)
@@ -398,6 +409,7 @@ function DisasterService.swap(def: Types.DisasterDef, startedAt: number)
 end
 
 function DisasterService.stop()
+	RouteToppleService.reset()
 	EventService.stop()
 	VolumeService.stop()
 	if stageScope then

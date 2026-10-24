@@ -77,6 +77,18 @@ function MapService.loadMap(mapId: string): Model?
 	local folder = Instance.new("Folder")
 	folder.Name = Contract.Folder.Map
 	local clone = source:Clone()
+	if not Config.Features.RouteTopple then
+		-- feature off: the map plays exactly as before the RouteTopple pieces were authored
+		local pieces: { Instance } = {}
+		for _, d in clone:GetDescendants() do
+			if d:HasTag(Tag.RouteTopple) then
+				table.insert(pieces, d)
+			end
+		end
+		for _, d in pieces do
+			d:Destroy()
+		end
+	end
 	clone.Parent = folder
 	local rt = Instance.new("Folder")
 	rt.Name = Contract.Folder.Runtime

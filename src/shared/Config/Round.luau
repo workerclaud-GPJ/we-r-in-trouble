@@ -25,4 +25,5 @@ return table.freeze({
 
 	DISASTER_NO_REPEAT = true,
 	MISSION_ID = "MidnightKitchen_CallForHelp",
+	NEW_MISSION_ID = "MidnightKitchen_CallForHelp_Capability", -- used instead when Features.NewMission
 })

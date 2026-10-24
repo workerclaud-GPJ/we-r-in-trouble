@@ -28,6 +28,7 @@ local DisasterService = require(script.Parent.DisasterService)
 local MissionService = require(script.Parent.MissionService)
 local ExtractionService = require(script.Parent.ExtractionService)
 local Hud = require(script.Parent.Hud)
+local LootService = require(script.Parent.LootService)
 
 local Attr = Contract.Attr
 local Phase = Contract.Phase
@@ -221,6 +222,7 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 	ReviveService.reset()
 	HoldService.reset()
 	ItemService.reset()
+	LootService.reset()
 	PlayerStateService.endMatch()
 	scope:clean()
 	MapService.unloadMap()
@@ -233,7 +235,7 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 end
 
 local function runMatch(candidates: { Player })
-	local mission = Config.Missions[R.MISSION_ID]
+	local mission = Config.Missions[if Config.Features.NewMission then R.NEW_MISSION_ID else R.MISSION_ID]
 	local disaster = mission and pickDisaster(mission)
 	if not (mission and disaster) then
 		warn("[Round] mission/disaster config missing")
@@ -281,6 +283,9 @@ local function runMatch(candidates: { Player })
 		exitConn:Disconnect()
 	end)
 
+	if Config.Features.CapabilitySpawn then
+		LootService.spawnRound(mission) -- before MissionService.start: Deliver.open counts these items
+	end
 	MissionService.start(mission, startedAt)
 	DisasterService.start(disaster, startedAt)
 	local firstStep = mission.steps[1]

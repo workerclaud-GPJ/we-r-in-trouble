@@ -34,6 +34,7 @@ Contract.Tag = table.freeze({
 	VolumeLevel = "VolumeLevel", -- Part, attr Level (0 = volume reference height + X/Z footprint)
 	EventLane = "EventLane", -- Part, attr EventId: lane band for IceLane events (LookVector = slide dir)
 	RisingVolume = "RisingVolume", -- runtime: the volume (water) Part in Map.Runtime (server creates)
+	RouteTopple = "RouteTopple", -- Model (PrimaryPart + FallenPose): server topples it into a new walkable route
 })
 
 Contract.Name = table.freeze({
@@ -49,10 +50,12 @@ Contract.Name = table.freeze({
 	Moonlight = "Moonlight",
 	VolumeSource = "VolumeSource", -- optional Part in the map: where the water comes from (hose spray FX)
 	RisingVolume = "RisingVolume", -- runtime water Part name
+	FallenPose = "FallenPose", -- CFrameValue (or Model: its pivot) inside a RouteTopple model = final pivot
 })
 
 Contract.CollisionGroup = table.freeze({
 	Players = "Players",
+	Items = "Items", -- Features.ItemPhysics: lying items (collide with world, not with Players)
 })
 
 -- Attribute names (RoundState / objective / player / map)
@@ -144,6 +147,8 @@ Contract.Attr = table.freeze({
 	Part = "Part",
 	ItemType = "ItemType",
 	Zone = "Zone",
+	SizeClass = "SizeClass", -- ItemSpawn: "Small" (default) | "Medium" (largest item size that fits)
+	Fallback = "Fallback", -- ItemSpawn: true = guaranteed point for CapabilitySpawn force-spawns
 	UnlockedBy = "UnlockedBy",
 	KillY = "KillY",
 	-- Map markup (server sets)
@@ -162,6 +167,12 @@ Contract.Attr = table.freeze({
 	RiseStartedAt = "RiseStartedAt",
 	RiseEndsAt = "RiseEndsAt",
 	SurfaceY = "SurfaceY", -- RisingVolume part: world Y the surface is rising to (BaseY + RiseTo)
+	-- RouteTopple model (Level sets TopplesOn; server sets the rest)
+	TopplesOn = "TopplesOn", -- string: comma list of disaster ids, e.g. "Earthquake,Flood"
+	ToppleWarning = "ToppleWarning", -- true while it creaks/wobbles before the fall
+	ToppleFallAt = "ToppleFallAt", -- server time the fall starts (clients animate from it)
+	ToppleFallTime = "ToppleFallTime", -- s the fall takes
+	ToppleLanded = "ToppleLanded", -- true once it lies in its FallenPose (dust + thud on clients)
 })
 
 Contract.Phase = table.freeze({
