@@ -30,6 +30,7 @@ local PlayerStateService = require(script.Parent.PlayerStateService)
 local DisasterService = require(script.Parent.DisasterService)
 local MissionService = require(script.Parent.MissionService)
 local RoundService = require(script.Parent.RoundService)
+local CableThrowService = require(script.Parent.CableThrowService)
 local EventService = require(script.Parent.EventService)
 local RoundState = require(script.Parent.RoundState)
 local RouteToppleService = require(script.Parent.RouteToppleService)
@@ -199,6 +200,10 @@ function DebugCommands.run(text: string, caller: Player?): string
 			return table.concat(lines, "\n")
 		end
 		return LootService.check(tonumber(a1) or 100)
+	elseif cmd == "cable" then
+		if not a1 or not CableThrowService.debugHook(a1) then
+			return "usage: cable <TN|TE|FC|TF> (route not hooked yet)"
+		end
 	elseif cmd == "scenario" then
 		local id = a1 and RoundService.setNextScenario(a1)
 		if not id then

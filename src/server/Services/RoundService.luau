@@ -29,6 +29,7 @@ local MissionService = require(script.Parent.MissionService)
 local ExtractionService = require(script.Parent.ExtractionService)
 local Hud = require(script.Parent.Hud)
 local LootService = require(script.Parent.LootService)
+local CableThrowService = require(script.Parent.CableThrowService)
 
 local Attr = Contract.Attr
 local Phase = Contract.Phase
@@ -225,6 +226,7 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 	HoldService.reset()
 	ItemService.reset()
 	LootService.reset()
+	CableThrowService.reset()
 	PlayerStateService.endMatch()
 	scope:clean()
 	MapService.unloadMap()
@@ -277,6 +279,10 @@ local function applyScenario(mission: Types.MissionDef, map: Model)
 			point.CFrame = cam.CFrame
 		end
 	end
+	if mission.startFlag then
+		MapService.setFlag(mission.startFlag) -- e.g. TableStart: the table spawn pads win
+	end
+	CableThrowService.begin(mission)
 	RoundState.set(Attr.ExitKind, mission.exitKind)
 	RoundState.set(Attr.ScenarioId, mission.id)
 	print(`[Round] scenario {mission.id} (exit {mission.exitKind or "Carrier"})`)

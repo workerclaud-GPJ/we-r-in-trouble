@@ -22,6 +22,7 @@ local CosmeticsService = require(Services.CosmeticsService)
 local RoundService = require(Services.RoundService)
 local DashService = require(Services.DashService)
 local RouteToppleService = require(Services.RouteToppleService)
+local CableThrowService = require(Services.CableThrowService)
 
 MapService.ensureLobby()
 HoldService.start()
@@ -32,4 +33,5 @@ PlayerStateService.start() -- connects PlayerAdded last so every listener above 
 DebugCommands.start()
 DashService.start()
 RouteToppleService.start() -- boot check only; no-op while Config.Features.RouteTopple is false
+CableThrowService.start()
 RoundService.start()

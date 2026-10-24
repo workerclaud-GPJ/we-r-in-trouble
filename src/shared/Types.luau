@@ -11,7 +11,7 @@ export type PlayerState = "Lobby" | "Standing" | "Downed" | "Eliminated" | "Esca
 export type MoveMode = "Normal" | "Downed" | "Pinned"
 export type EndReason = "Escaped" | "Collapse" | "Wipe" | "Abandoned"
 export type TeamWipeRule = "AllDowned" | "NoneStanding"
-export type ObjectiveKind = "Repair" | "Deliver" | "MultiHold"
+export type ObjectiveKind = "Repair" | "Deliver" | "MultiHold" | "CableHook"
 
 -- GDD §4.2 hazard component. One loose shape; DisasterService reads fields by `type`.
 export type HazardComponent = {
@@ -123,6 +123,7 @@ export type ObjectiveDef = {
 	-- Escape scenarios: MapService.setFlag(setsFlag) when this objective completes
 	-- (reveals FlagReveal parts with RevealedBy = flag, e.g. the cable bridge)
 	setsFlag: string?,
+	-- CableHook: done when a cable route with ReachesCounter = true is hooked (CableThrowService)
 }
 
 export type StepDef = {
@@ -146,6 +147,8 @@ export type MissionDef = {
 	hideParts: { string }?, -- map parts (names, searched recursively) removed for this scenario
 	fixedLoot: { FixedLoot }?, -- items placed on named ScenarioOnly ItemSpawns before the random loot
 	winCamera: string?, -- map part whose CFrame replaces WinCameraPoint for this scenario
+	startFlag: string?, -- MapService flag set before players spawn (e.g. "TableStart": spawn on the table)
+	cableThrow: boolean?, -- CableThrowService: Rope items can be cast at the map's cable hooks
 }
 
 export type FixedLoot = { itemType: string, spawn: string }

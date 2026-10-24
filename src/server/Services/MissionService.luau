@@ -25,6 +25,7 @@ local FACTORIES: { [string]: (ctx: Common.Context) -> Common.Objective } = {
 	Repair = require(script.Parent.Objectives.Repair).create,
 	Deliver = require(script.Parent.Objectives.Deliver).create,
 	MultiHold = require(script.Parent.Objectives.MultiHold).create,
+	CableHook = require(script.Parent.Objectives.CableHook).create,
 }
 
 type Runtime = {
