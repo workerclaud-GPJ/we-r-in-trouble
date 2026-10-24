@@ -1,0 +1,384 @@
+--!strict
+--[[
+	RoundService — Lobby → Intermission → Match → (Ending) → Result → Lobby.
+	GDD §2.1, §2.4, §5.8 (win/lose order), §8.6 Round flow (min 2 players; Studio behaves
+	like live unless ServerStorage has the DevMinPlayers attribute), Lobby AFK filter (60s).
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
+local Workspace = game:GetService("Workspace")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Contract = require(Shared.Contract)
+local Config = require(Shared.Config)
+local Types = require(Shared.Types)
+local Remotes = require(Shared.Remotes)
+local Cleanup = require(Shared.Util.Cleanup)
+
+local RoundState = require(script.Parent.RoundState)
+local MapService = require(script.Parent.MapService)
+local PlayerStateService = require(script.Parent.PlayerStateService)
+local HoldService = require(script.Parent.HoldService)
+local ReviveService = require(script.Parent.ReviveService)
+local ItemService = require(script.Parent.ItemService)
+local DisasterService = require(script.Parent.DisasterService)
+local MissionService = require(script.Parent.MissionService)
+local ExtractionService = require(script.Parent.ExtractionService)
+local Hud = require(script.Parent.Hud)
+
+local Attr = Contract.Attr
+local Phase = Contract.Phase
+local R = Config.Round
+
+type Activity = { lastActivity: number, lastPos: Vector3?, lastPing: number, lastSample: number }
+type Result = { win: boolean, reason: Types.EndReason, escaped: { Player } }
+
+local RoundService = {}
+
+local activity: { [Player]: Activity } = {}
+local forceStartRequested = false
+local forcedResult: Result? = nil
+local lastDisasterId: string? = nil
+local matchRunning = false
+local matchScope: Cleanup.Cleanup? = nil
+local rng = Random.new()
+
+local function now(): number
+	return Workspace:GetServerTimeNow()
+end
+
+local function playersNeeded(): number
+	if RunService:IsStudio() then
+		local override = ServerStorage:GetAttribute(Config.Debug.DEV_MIN_PLAYERS_ATTR)
+		if typeof(override) == "number" then
+			return math.max(1, math.floor(override))
+		end
+	end
+	return R.MIN_PLAYERS_TO_START
+end
+
+----------------------------------------------------------------------------
+-- Lobby AFK (GDD 2.1 / 5.9: movement > 2 studs or ActivityPing)
+----------------------------------------------------------------------------
+
+local function activityOf(player: Player): Activity
+	local a = activity[player]
+	if not a then
+		a = { lastActivity = os.clock(), lastPos = nil, lastPing = -math.huge, lastSample = 0 }
+		activity[player] = a
+	end
+	return a
+end
+
+local function markActive(player: Player)
+	activityOf(player).lastActivity = os.clock()
+	if player:GetAttribute(Attr.Inactive) == true then
+		player:SetAttribute(Attr.Inactive, false)
+	end
+end
+
+local function updateAfk()
+	local t = os.clock()
+	for _, player in Players:GetPlayers() do
+		local a = activityOf(player)
+		if t - a.lastSample >= R.ACTIVITY_SAMPLE_INTERVAL then
+			a.lastSample = t
+			local hrp = PlayerStateService.getHRP(player)
+			if hrp then
+				if not a.lastPos or (hrp.Position - a.lastPos).Magnitude > R.ACTIVITY_MOVE_THRESHOLD then
+					a.lastPos = hrp.Position
+					markActive(player)
+				end
+			end
+		end
+		local afk = t - a.lastActivity >= R.LOBBY_AFK_AFTER
+		if player:GetAttribute(Attr.Inactive) ~= afk then
+			player:SetAttribute(Attr.Inactive, afk)
+		end
+	end
+end
+
+local function readyPlayers(): { Player }
+	local out: { Player } = {}
+	for _, player in Players:GetPlayers() do
+		if PlayerStateService.getState(player) == Contract.State.Lobby and player:GetAttribute(Attr.Inactive) ~= true then
+			table.insert(out, player)
+		end
+	end
+	return out
+end
+
+-- Returns the participants once the intermission completes.
+local function runLobby(): { Player }
+	RoundState.set(Attr.Phase, Phase.Lobby)
+	RoundState.set(Attr.PhaseEndsAt, nil)
+	RoundState.set(Attr.MaxPlayers, R.MAX_PLAYERS)
+	local endsAt: number? = nil
+	while true do
+		updateAfk()
+		local ready = readyPlayers()
+		local needed = playersNeeded()
+		RoundState.set(Attr.PlayersReady, #ready)
+		RoundState.set(Attr.PlayersNeeded, needed)
+
+		if forceStartRequested and #ready >= 1 then
+			forceStartRequested = false
+			return ready
+		end
+		if #ready >= needed then
+			if not endsAt then
+				endsAt = now() + R.INTERMISSION_TIME
+				RoundState.set(Attr.Phase, Phase.Intermission)
+				RoundState.set(Attr.PhaseEndsAt, endsAt)
+			elseif now() >= (endsAt :: number) then
+				return ready
+			end
+		elseif endsAt then
+			endsAt = nil -- dropped below the minimum: stop counting
+			RoundState.set(Attr.Phase, Phase.Lobby)
+			RoundState.set(Attr.PhaseEndsAt, nil)
+		end
+		task.wait(R.MATCH_TICK)
+	end
+end
+
+----------------------------------------------------------------------------
+-- Match
+----------------------------------------------------------------------------
+
+local function pickDisaster(mission: Types.MissionDef): Types.DisasterDef?
+	local pool: { Types.DisasterDef } = {}
+	for _, id in mission.disasters do
+		local def = Config.Disasters[id]
+		if def then
+			table.insert(pool, def)
+		else
+			warn(`[Round] disaster {id} has no DisasterDef`)
+		end
+	end
+	if R.DISASTER_NO_REPEAT and #pool >= 2 and lastDisasterId then
+		for i = #pool, 1, -1 do
+			if pool[i].id == lastDisasterId then
+				table.remove(pool, i)
+			end
+		end
+	end
+	if #pool == 0 then
+		return nil
+	end
+	local def = pool[rng:NextInteger(1, #pool)]
+	lastDisasterId = def.id
+	return def
+end
+
+local function displayNames(list: { Player }): string
+	local names: { string } = {}
+	for _, p in list do
+		table.insert(names, p.DisplayName)
+	end
+	return table.concat(names, ", ")
+end
+
+local function checkResult(startedAt: number, departed: boolean, inZone: { Player }): Result?
+	if forcedResult then
+		local r = forcedResult
+		forcedResult = nil
+		return r
+	end
+	if departed then
+		return { win = true, reason = "Escaped", escaped = inZone }
+	end
+	if PlayerStateService.isWiped() then
+		return { win = false, reason = "Wipe", escaped = {} }
+	end
+	if PlayerStateService.teamCount() == 0 then
+		return { win = false, reason = "Abandoned", escaped = {} }
+	end
+	if now() - startedAt >= R.MATCH_HARD_LIMIT then
+		local zone = ExtractionService.playersInZone()
+		if ExtractionService.isCarrierArrived() and #zone >= 1 then
+			return { win = true, reason = "Escaped", escaped = zone }
+		end
+		return { win = false, reason = "Collapse", escaped = {} }
+	end
+	return nil
+end
+
+local function cleanupMatch(scope: Cleanup.Cleanup)
+	MissionService.stop()
+	ExtractionService.stop()
+	DisasterService.stop()
+	ReviveService.reset()
+	HoldService.reset()
+	ItemService.reset()
+	PlayerStateService.endMatch()
+	scope:clean()
+	MapService.unloadMap()
+	RoundState.clearMatch()
+	for _, player in Players:GetPlayers() do
+		PlayerStateService.setLobby(player)
+		markActive(player)
+		activityOf(player).lastPos = nil
+	end
+end
+
+local function runMatch(candidates: { Player })
+	local mission = Config.Missions[R.MISSION_ID]
+	local disaster = mission and pickDisaster(mission)
+	if not (mission and disaster) then
+		warn("[Round] mission/disaster config missing")
+		task.wait(5)
+		return
+	end
+	local map = MapService.loadMap(mission.mapId)
+	if not map then
+		task.wait(5)
+		return
+	end
+
+	local participants: { Player } = {}
+	for _, p in candidates do
+		if p.Parent == Players and #participants < R.MAX_PLAYERS then
+			table.insert(participants, p)
+		end
+	end
+
+	local scope = Cleanup.new()
+	matchScope = scope
+	local matchId = (RoundState.get(Attr.MatchId) or 0) + 1
+	local startedAt = now()
+	matchRunning = true
+	forcedResult = nil
+	RoundState.set(Attr.MatchId, matchId)
+	RoundState.set(Attr.Phase, Phase.Match)
+	RoundState.set(Attr.PhaseEndsAt, nil)
+	RoundState.set(Attr.MatchStartedAt, startedAt)
+	RoundState.set(Attr.MatchEndsAt, startedAt + R.MATCH_HARD_LIMIT)
+
+	PlayerStateService.beginMatch(participants)
+	local spawns = MapService.matchSpawns(#participants)
+	for i, p in participants do
+		PlayerStateService.spawnInMatch(p, spawns[i])
+	end
+
+	local exitConn = MissionService.ExitUnlocked:Connect(function()
+		ExtractionService.begin(mission)
+		if Config.Extraction.EXIT_UNLOCK_FORCES_CRITICAL then
+			DisasterService.setStage(Contract.Stage.Critical)
+		end
+	end)
+	scope:add(function()
+		exitConn:Disconnect()
+	end)
+
+	MissionService.start(mission, startedAt)
+	DisasterService.start(disaster, startedAt)
+	local firstStep = mission.steps[1]
+	Hud.banner("Briefing", mission.displayName, if firstStep then firstStep.displayName else nil, "Good", R.BRIEFING_TIME)
+
+	-- match loop
+	local result: Result
+	local last = os.clock()
+	while true do
+		task.wait(R.MATCH_TICK)
+		local t = os.clock()
+		local dt = t - last
+		last = t
+		PlayerStateService.update(dt)
+		ItemService.update(dt)
+		MissionService.update(dt)
+		local departed, inZone = ExtractionService.update(dt)
+		local r = checkResult(startedAt, departed, inZone)
+		if r then
+			result = r
+			break
+		end
+	end
+
+	-- end of match: stop gameplay (no more damage/bleed/respawn), keep visuals for the cinematic
+	PlayerStateService.endMatch()
+	MissionService.stop()
+	for _, p in result.escaped do
+		PlayerStateService.setEscaped(p)
+	end
+	RoundState.set(Attr.ResultWin, result.win)
+	RoundState.set(Attr.ResultReason, result.reason)
+	RoundState.set(Attr.ResultTime, math.floor(math.min(now() - startedAt, R.MATCH_HARD_LIMIT)))
+	RoundState.set(Attr.ResultDisaster, disaster.displayName)
+	RoundState.set(Attr.ResultEscaped, displayNames(result.escaped))
+	if result.win then
+		RoundState.set(Attr.Phase, Phase.Ending)
+		RoundState.set(Attr.PhaseEndsAt, now() + R.WIN_CINEMATIC_TIME)
+		task.wait(R.WIN_CINEMATIC_TIME) -- kitchen keeps shaking behind the carrier
+	end
+	DisasterService.stop()
+	RoundState.set(Attr.Phase, Phase.Result)
+	RoundState.set(Attr.PhaseEndsAt, now() + R.RESULT_TIME)
+	task.wait(R.RESULT_TIME)
+
+	matchRunning = false
+	matchScope = nil
+	cleanupMatch(scope)
+end
+
+----------------------------------------------------------------------------
+-- Public API
+----------------------------------------------------------------------------
+
+function RoundService.isMatchRunning(): boolean
+	return matchRunning
+end
+
+-- Debug: skip the intermission wait (needs >= 1 ready player).
+function RoundService.forceStart()
+	forceStartRequested = true
+end
+
+-- Debug: end the running match. Win = everyone active counts as escaped.
+function RoundService.forceEnd(win: boolean)
+	if not matchRunning then
+		return
+	end
+	if win then
+		local zone = ExtractionService.playersInZone()
+		local escaped = if #zone > 0 then zone else PlayerStateService.activeMembers()
+		forcedResult = { win = true, reason = "Escaped", escaped = escaped }
+	else
+		forcedResult = { win = false, reason = "Collapse", escaped = {} }
+	end
+end
+
+function RoundService.start()
+	MapService.ensureLobby()
+	MapService.unloadMap()
+
+	Remotes.get("ActivityPing").OnServerEvent:Connect(function(player: Player)
+		local a = activityOf(player)
+		local t = os.clock()
+		if t - a.lastPing < R.ACTIVITY_PING_SERVER_MIN_INTERVAL then
+			return
+		end
+		a.lastPing = t
+		markActive(player)
+	end)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		activity[player] = nil
+	end)
+
+	task.spawn(function()
+		while true do
+			local participants = runLobby()
+			local ok, err = pcall(runMatch :: any, participants)
+			if not ok then
+				warn("[Round] match error:", err)
+				matchRunning = false
+				pcall(cleanupMatch, matchScope or Cleanup.new())
+			end
+		end
+	end)
+end
+
+return RoundService

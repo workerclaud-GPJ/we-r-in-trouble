@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| สถานะ | Draft **v0.4** (แก้ตาม `docs/reviews/GDD-review-3.md` D1–D9; v0.3 = review 2 + แฮมสเตอร์ + เส้นตายส่งงาน) รอ Boss อนุมัติ (M0) |
+| สถานะ | **v0.5 — Boss อนุมัติแล้ว** (v0.4 + solo start ปิด; v0.4 = review 3 D1–D9) |
 | **เส้นตายส่งงาน** | **25 ต.ค. 2026 เวลา 12:00 (เวลากรุงเทพฯ)** ส่ง: เกมที่ publish แล้ว + เอกสาร + วิดีโอ → **สิ่งที่สร้างก่อนคือหัวข้อ 8 "Deadline build"** ส่วนหัวข้ออื่นเป็นวิสัยทัศน์ระยะยาว (ป้าย M1/M2 ในหัวข้อเหล่านั้น = งานหลังส่งงาน) |
 | ชื่ออื่นของโปรเจกต์ | "Roblox Hamster Conquror the world" |
 | ผู้เขียน | Game Designer |
@@ -48,7 +48,7 @@
 
 | | |
 |---|---|
-| ผู้เล่นต่อ server | **2–4 คน** (`MAX_PLAYERS = 4`), 1 Match ต่อ server, เริ่มได้เมื่อ ≥ 2 คน **(รอ Boss ยืนยัน Q1-ก)** |
+| ผู้เล่นต่อ server | **2–4 คน** (`MAX_PLAYERS = 4`), 1 Match ต่อ server, **เริ่มได้เมื่อ ≥ 2 คนเท่านั้น (ไม่มี solo start — Boss ตัดสินแล้ว)** ยกเว้นใน Studio ที่ใช้ `DEV_MIN_PLAYERS_STUDIO = 1` เพื่อเทสต์ |
 | ภัยพิบัติ | **สุ่ม 1 ภัยต่อรอบ** จากรายการของแมพ แล้วรุนแรงขึ้นตาม Stage (ข้อตัดสินใจของ Boss) |
 | ความยาว Match | สูงสุด 7:00 โดยทีมปกติใช้ ~4:35–4:55, ทีมเก่ง ~3:05–3:30, ทีมช้า ~6:05 (ดู 2.3) **(รอ Boss ยืนยัน Q1-ข)** |
 | หนึ่ง Round | ~6 นาที (Lobby 30s + Match ~5:00 + Result 15s) |
@@ -88,7 +88,7 @@ Lobby (30s) ──► Match (≤ 7:00) ─────────────�
 ### 2.1 Lobby
 - Lobby คือ **"กรงแฮมสเตอร์ยักษ์"** (มีท่อ, วงล้อ, ชามเมล็ดทานตะวัน ให้เดินเล่นได้) อยู่ใน place เดียวกับแมพ แต่**ห่างจากแมพ 3,000 studs ทางแกน X** มีกำแพงล่องหน (CanCollide, Transparency 1) ทุกด้านรวมเพดาน ไม่มีทางเชื่อมกับแมพ hazard ทุกชนิดทำงานเฉพาะใน bounds ของแมพ
 - `PlayerAdded` → server เรียก `LoadCharacter` ที่ Lobby ถ้าตัวละครใน Lobby หายหรือตาย ให้ `LoadCharacter` ใหม่หลัง 2s
-- เมื่อ Lobby มีผู้เล่นที่**ไม่ AFK** ≥ `MIN_PLAYERS_TO_START` (2) คน → นับ Intermission 30s บน HUD ถ้าต่ำกว่า 2 → หยุดนับและแสดง "Waiting for players (1/2)" **(รอ Boss ยืนยัน Q1-ก, Q1-ค)**
+- เมื่อ Lobby มีผู้เล่นที่**ไม่ AFK** ≥ `MIN_PLAYERS_TO_START` (2) คน → นับ Intermission 30s บน HUD ถ้าต่ำกว่า 2 → หยุดนับและแสดง "Waiting for players (1/2)" (Boss ตัดสินแล้ว: ไม่มี solo start) — ใน Studio ใช้ `DEV_MIN_PLAYERS_STUDIO` = 1 แทน (ไม่มีผลบน live)
 - **AFK ใน Lobby**: ไม่มี activity ≥ 60s (วิธีตรวจดู 5.9) → ไม่ถูกส่งเข้า Match และไม่นับในเงื่อนไขเริ่ม HUD แสดง "AFK — move to join next match"
 - ครบเวลา → server **สุ่มภัย 1 แบบ** จาก `MissionDef.disasters`, clone แมพจาก `ServerStorage.Maps.<MapId>` เข้า `Workspace.Map`, เรียก `LoadCharacter` ผู้เล่นที่ไม่ AFK แล้ว `PivotTo` ไปที่ spawn (5.4)
 - ผู้เล่นที่เข้ามาระหว่าง Match รออยู่ใน Lobby จนถึง Round ถัดไป (HUD แสดงเวลาที่เหลือของ Match)
@@ -261,7 +261,7 @@ Co-op ที่บังคับนอกเหนือจาก objective:
 - Solo fallback: ปล่อยการงัดแล้วสิ่งของค้างอยู่ 3s ให้คนเดียวดึงได้
 
 ### 3.5 Solo fallback
-- เกิดเมื่อ `activeCount = 1` (เพื่อนออก, Inactive หรือรอ respawn) หรือเปิด `DEV_ALLOW_SOLO = true` ใน Studio
+- เกิดเมื่อ `activeCount = 1` (เพื่อนออก, Inactive หรือรอ respawn) หรือเทสต์ใน Studio คนเดียวด้วย `DEV_MIN_PLAYERS_STUDIO = 1` (fallback นี้คือการรับมือเมื่อเพื่อนออกกลาง Match ไม่ใช่โหมดเล่นคนเดียว: Match เริ่มได้เมื่อ ≥ 2 คนเสมอบน live)
 - `MultiHold`: required = 1 อัตโนมัติ ถ้ากำลังนับ Continuous อยู่และ `Held` ต่ำกว่าค่าที่ล็อก → รีเซ็ตตามกฎ 3.4 แล้วเริ่มใหม่ด้วย required = 1
 - `Deliver`: จำนวนลดตามสูตรใน 3.4
 - `HeavyCarry` / `Rescue`: ตาม 3.4
@@ -758,7 +758,7 @@ Standing/Downed --Y < KillY หรือ Humanoid.Died--> Eliminated
 | Extraction | ETA 60s → กรงสัตว์เลี้ยงหย่อนลงมา → Departure 10s + Last call |
 | HUD | 8 ชิ้น พร้อม world marker ของ objective (8.6) |
 | ปุ่มควบคุม | เดิน, กระโดด, กดใช้ (E / แตะ) — **ไม่มีวิ่ง ไม่มีปุ่มวางของ** จึงไม่ต้องทำปุ่มพิเศษบนมือถือ |
-| ผู้เล่นต่อ server | 2–4 คน, **เริ่มคนเดียวได้ถ้ารออยู่คนเดียว 20s** (เพราะคนตรวจงานอาจเข้ามาเล่นคนเดียว) **(รอ Boss ยืนยัน Q1-ค)** |
+| ผู้เล่นต่อ server | **2–4 คน เริ่มได้เมื่อ ≥ 2 คนเท่านั้น** (Boss ตัดสิน: ไม่มี solo start) — Studio เท่านั้น: `DEV_MIN_PLAYERS_STUDIO = 1` ให้ agent เทสต์คนเดียวได้ (ไม่มีผลบน live) |
 | ฉากเด่นสำหรับวิดีโอ | **"Rescue Moment"**: ตอนหน้าต่างเปิด แผ่นดินไหวแรงที่สุด + ไฟกู้ภัยแดง/น้ำเงินสาดเข้ามา + กรงหย่อนลงมาพร้อมไฟสปอตไลต์ + กล้องตอนชนะ (8.6.1) และปุ่มซ่อน HUD สำหรับถ่ายวิดีโอ |
 
 ### 8.2 ทำไมเลือก Earthquake
@@ -837,12 +837,12 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 | ระบบ | รายละเอียด (อ้างอิงสเปกเต็ม) | เจ้าของ |
 |---|---|---|
 | Foundation | Rojo project, `Remotes.luau`, Config + Data (Mission/Objective/Item/Disaster/Stage) ตาม CONVENTIONS.md | Systems |
-| Round flow | Lobby = แท่นธรรมดา (ห่างแมพ 3,000 studs, กำแพงล่องหน), Intermission 30s เมื่อ ≥ 2 คน **หรือ** 20s เมื่ออยู่คนเดียว (solo match) — **ถ้ามีคนที่ไม่ AFK ครบ ≥ 2 คนระหว่างนับ solo → เปลี่ยนเป็นนับ co-op ทันที เวลาที่เหลือ = max(เวลาที่เหลือ, 10s)**, สุ่มภัยจากรายการ, clone/ล้างแมพ, Result 15s (2.1, 2.4) | Scripter |
+| Round flow | Lobby = แท่นธรรมดา (ห่างแมพ 3,000 studs, กำแพงล่องหน), Intermission 30s เมื่อมีคนที่ไม่ AFK ≥ 2 คน (ไม่มี solo start; ใน Studio ใช้ `DEV_MIN_PLAYERS_STUDIO = 1` ตรวจด้วย `RunService:IsStudio()` บน live ใช้ค่า 2 เสมอ), สุ่มภัยจากรายการ, clone/ล้างแมพ, Result 15s (2.1, 2.4) | Scripter |
 | Debug commands (Studio เท่านั้น) | `skipStep`, `setStage <name>`, `unlockExit`, `setHP <n>`, `spawnDummyHolder <anchor>` (holder ปลอมสำหรับเทสต์ MultiHold และถ่าย "Held 4/4"), `endMatch win/lose` — ทำงานเฉพาะเมื่อ `RunService:IsStudio()` หรือ UserId อยู่ในรายชื่อ dev ใน Config (บน live ใช้ไม่ได้สำหรับคนอื่น และ server ตรวจทุกครั้ง) | Systems (Day 1) |
 | Server-timed hold | กลไกเดียวสำหรับ Repair, MultiHold, Revive (3.3) | Scripter |
-| Objectives | `Repair`, `Deliver`, `MultiHold` Cumulative + Emergency override + solo (required = 1) (3.4, 3.5) | Scripter |
+| Objectives | `Repair`, `Deliver`, `MultiHold` Cumulative + Emergency override + fallback เมื่อเพื่อนออกกลาง Match (required ลดตาม `activeCount`) (3.4, 3.5) | Scripter |
 | Items | หยิบ (Press), เสียบ, ตกเองเมื่อ Downed/Eliminated/ออกจากเกม, วางแบบ anchored ด้วย raycast, กู้คืนเมื่อต่ำกว่า KillY (5.7 ข้อ 1) | Systems |
-| Player state | HP attribute, `CharacterAutoLoads = false`, ปิด Reset/Dead (5.2), Downed + bleed-out 30s, Revive 4s (Pinned), Eliminated → **respawn คงที่ 15s** ที่ spawn ที่มี Priority ต่ำสุดและเปิดใช้ (ไม่ตรวจ hazard), spawn protection 3s, Team Wipe `AllDowned`, ทีมคนเดียว: ล้ม = Eliminated | Systems |
+| Player state | HP attribute, `CharacterAutoLoads = false`, ปิด Reset/Dead (5.2), Downed + bleed-out 30s, Revive 4s (Pinned), Eliminated → **respawn คงที่ 15s** ที่ spawn ที่มี Priority ต่ำสุดและเปิดใช้ (ไม่ตรวจ hazard), spawn protection 3s, Team Wipe `AllDowned`, ถ้าเหลือคนเดียวกลาง Match (เพื่อนออก): ล้ม = Eliminated | Systems |
 | Speed | Server ตั้ง `SpeedMult` / `MoveMode`, client เขียน WalkSpeed (16 × SpeedMult, Downed 5, Pinned 0) (5.5 ไม่มีวิ่ง ไม่ตรวจระยะ) | Systems |
 | Disaster | Stage system 4 ขั้น + fast-forward (4.1), Earthquake: Pulse, TelegraphedImpact floor-aware (ข้อ 1–4, 6–7), MoveModifier, ScreenEffect shake, debris แบบภาพ (`propCollides = false`), `NoImpact` รอบ spawn | Scripter (server), UI (VFX client) |
 | Extraction / Win-Lose | ETA 60s, กรงหย่อนลงมา, Departure 10s (หยุดชั่วคราวเมื่อมีคนออกจากโซน), Last call 45s, ชนะ / แพ้ Collapse / แพ้ Wipe, ลำดับตรวจ (5.8) | Scripter |
@@ -871,7 +871,8 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 
 | Key | ค่าเต็ม (หัวข้อ 9) | Deadline build |
 |---|---|---|
-| `SOLO_START_AFTER` | (ไม่มี) | 20s รอคนเดียว → เริ่ม solo match (รอ Boss ยืนยัน Q1-ค) |
+| `MIN_PLAYERS_TO_START` | 2 | 2 (ไม่มี solo start) |
+| `DEV_MIN_PLAYERS_STUDIO` | (ไม่มี) | 1 — ใช้เฉพาะใน Studio (`RunService:IsStudio()`), ไม่มีผลบน live |
 | `SPRINT_SPEED` / Stamina | 24 / มี | ไม่มี (เดิน 16 อย่างเดียว) |
 | ปุ่ม Drop | มี | ไม่มี (ของตกเองเมื่อล้ม/ออกจากเกม) |
 | `DeliverBatteries.maxCount` | 4 | 3 (มี 3 โซน) |
@@ -908,18 +909,18 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 | เวลา (BKK) | H | Scripter | Systems | UI | Level | Art/Audio | QA | Lead (docs/video) | Boss |
 |---|---|---|---|---|---|---|---|---|---|
 | 23 ต.ค. 23:00–00:00 | 0–1 | อ่าน contract, โครง RoundService | **Deadline contract**, Rojo, Config/Data, `Remotes.luau`, debug commands | โครง ScreenGui | Blockout พื้น 160×120 + ผนัง + เคาน์เตอร์ตัว L | สเปกแฮมสเตอร์ + รายการ asset (เลือกเสียง/asset จากคลังที่ใช้ได้กับ place นี้แน่นอน) | checklist CP0–CP4 | — | สร้าง place, ต่อ Rojo + GitHub, publish เป็น private place + **compliance (~20 นาที)**: กรอกแบบสอบถาม Maturity & Compliance ใน Creator Hub, ตั้ง Genre, อุปกรณ์ Computer/Phone/Tablet, Max players 4, ตรวจว่า audio/asset ใช้ได้ |
-| 00:00–02:00 | 1–3 | Round flow (Lobby, intermission 2 คน/solo 20s, clone/ล้างแมพ, Result) | HP attr, ปิด autoload/reset/Dead, LoadCharacter ใน Lobby | Stage + timer, รายการ objective | ทางลาด, ผ้าม่าน, ขอบหน้าต่าง, วาง spawn/anchor/ItemSpawn + tags, `WinCameraPoint` | แฮมสเตอร์ v0 เป็น `StarterCharacter` | — | — | **CP0 (02:00)**: Rojo sync ได้, เดินแฮมสเตอร์บนแมพได้, Round เริ่ม-จบได้ |
-| 02:00–09:00 (Boss นอน) | 3–10 | Server-timed hold, Repair, Deliver, MultiHold Cumulative + override + solo, Mission runner, Extraction/Departure/Last call, ชนะ/แพ้ | Downed/Revive/Pinned, respawn 15s, Wipe, ItemService, `SpeedMult` | Markers, Billboard anchor, HP, overlay, ETA/Departure, Result, ปุ่ม H ซ่อน HUD | `docs/levels/MidnightKitchen-deadline.md` | รายการเสียง + asset ID, สเปก prop/ดาวหมุน/ปุ๊ฟ/ไฟกู้ภัย/กรง, lighting 4 preset | ตรวจโค้ดเทียบ GDD + CONVENTIONS | โครงเอกสารส่งงาน (หัวข้อ, สรุปโปรเจกต์, workflow agent จาก TEAM.md) | นอน |
-| 24 ต.ค. 09:00–12:00 | 10–13 | Sync + แก้บั๊ก mission | Sync + แก้บั๊ก player/items | ต่อ HUD กับ Attribute จริง | ปรับแมพตามผล CP0 | Prop ใน Studio | เทสต์ 2 clients + solo | วิธีเล่น (how to play) ร่าง 1 | **CP1 (12:00)**: Lobby → Step 1 → Step 2 → ETA → ชนะ ได้ (ยังไม่มีภัย) ทั้ง 2 คนและ solo |
+| 00:00–02:00 | 1–3 | Round flow (Lobby, intermission ≥ 2 คน + `DEV_MIN_PLAYERS_STUDIO`, clone/ล้างแมพ, Result) | HP attr, ปิด autoload/reset/Dead, LoadCharacter ใน Lobby | Stage + timer, รายการ objective | ทางลาด, ผ้าม่าน, ขอบหน้าต่าง, วาง spawn/anchor/ItemSpawn + tags, `WinCameraPoint` | แฮมสเตอร์ v0 เป็น `StarterCharacter` | — | — | **CP0 (02:00)**: Rojo sync ได้, เดินแฮมสเตอร์บนแมพได้, Round เริ่ม-จบได้ |
+| 02:00–09:00 (Boss นอน) | 3–10 | Server-timed hold, Repair, Deliver, MultiHold Cumulative + override + fallback คนออก, Mission runner, Extraction/Departure/Last call, ชนะ/แพ้ | Downed/Revive/Pinned, respawn 15s, Wipe, ItemService, `SpeedMult` | Markers, Billboard anchor, HP, overlay, ETA/Departure, Result, ปุ่ม H ซ่อน HUD | `docs/levels/MidnightKitchen-deadline.md` | รายการเสียง + asset ID, สเปก prop/ดาวหมุน/ปุ๊ฟ/ไฟกู้ภัย/กรง, lighting 4 preset | ตรวจโค้ดเทียบ GDD + CONVENTIONS | โครงเอกสารส่งงาน (หัวข้อ, สรุปโปรเจกต์, workflow agent จาก TEAM.md) | นอน |
+| 24 ต.ค. 09:00–12:00 | 10–13 | Sync + แก้บั๊ก mission | Sync + แก้บั๊ก player/items | ต่อ HUD กับ Attribute จริง | ปรับแมพตามผล CP0 | Prop ใน Studio | เทสต์ 2 clients (+ 1 client ด้วย DEV_MIN_PLAYERS_STUDIO) | วิธีเล่น (how to play) ร่าง 1 | **CP1 (12:00)**: Lobby → Step 1 → Step 2 → ETA → ชนะ ได้ (ยังไม่มีภัย) ด้วย 2 clients |
 | 12:00–13:00 | 13–14 | พัก / buffer | | | | | | | |
 | 13:00–17:00 | 14–18 | Stage system + Earthquake + Big Shake (data) | ต่อ damage → Downed → Revive/Respawn, Wipe, cleanup ข้ามรอบ | Banner, วงเตือน + debris (VFX), shake, overlay Downed | `NoImpact` รอบ spawn, ตรวจว่า raycast เจอพื้นทุกจุด | แฮมสเตอร์ v1, ดาวหมุน, ปุ๊ฟ, เสียงทั้งหมด | เทสต์ 3–4 clients | **Storyboard + shot list + บทบรรยายวิดีโอ** (8.12) ส่งก่อน 18:00 | **CP2 (17:00)**: Match เต็มพร้อม Earthquake, ล้ม/revive/respawn, แพ้ Collapse และ Wipe ได้ |
 | 17:00–18:00 | 18–19 | พัก / buffer | | | | | | | อ่าน storyboard (10 นาที), นัดเพื่อนสำหรับ 21:00 |
-| 18:00–21:00 | 19–22 | จูนตาม CP2, edge case (ออกกลาง Match, solo) | ตรวจ validation ของ Remote, ตรวจ leak ข้ามรอบ | Result, กล้องตอนชนะ, ทดสอบจอมือถือ (Device Emulator) | ตกแต่งฉากยักษ์, แสงกลางคืน | Rescue Moment: ไฟกู้ภัยนอกหน้าต่าง, กรงหย่อน + ไฟฉาย, เพลงชนะ/แพ้ | Regression, มือถือ | เอกสารร่าง 2 (ใส่ placeholder รูป) | **CP3 (21:00) = FEATURE FREEZE**: ทุกอย่างใน 8.6 + Rescue Moment ทำงาน → **เปิด public ครั้งแรก** (เทสต์ live ล่วงหน้า) |
+| 18:00–21:00 | 19–22 | จูนตาม CP2, edge case (ออกกลาง Match → fallback) | ตรวจ validation ของ Remote, ตรวจ leak ข้ามรอบ | Result, กล้องตอนชนะ, ทดสอบจอมือถือ (Device Emulator) | ตกแต่งฉากยักษ์, แสงกลางคืน | Rescue Moment: ไฟกู้ภัยนอกหน้าต่าง, กรงหย่อน + ไฟฉาย, เพลงชนะ/แพ้ | Regression, มือถือ | เอกสารร่าง 2 (ใส่ placeholder รูป) | **CP3 (21:00) = FEATURE FREEZE**: ทุกอย่างใน 8.6 + Rescue Moment ทำงาน → **เปิด public ครั้งแรก** (เทสต์ live ล่วงหน้า) |
 | 21:00–22:30 | 22–23.5 | แก้บั๊กสด | แก้บั๊กสด | แก้บั๊กสด | — | **ถ่าย screenshot** 8–10 รูป (ตาม list ของ Lead) | จับเวลา + จดบั๊ก | — | **Playtest ผู้เล่นจริง + ถ่าย footage ดิบ** บน live place ที่เพิ่งเปิด (Boss + เพื่อน ≥ 1, ≥ 3 Match, มือถือ ≥ 1) อัดหน้าจอทุก Match ตาม shot list (ทีม 2 ตัวเป็นหลัก) |
 | 22:30–01:00 | 23.5–26 | ถ้า Go: Flood (server) / No-go: แก้บั๊ก | แก้บั๊กจาก playtest | ถ้า Go: Breath HUD + น้ำ tween | ถ้า Go: `VolumeLevel` | ขัดเสียง/แสง, icon + thumbnail ของเกม | สรุปเวลาเทียบ 8.5 + จัดบั๊ก Blocker/Major/Minor | ใส่ screenshot ลงเอกสาร | 22:30 ตัดสิน **Go/No-go** stretch (Go เฉพาะเมื่อ CP2 และ CP3 ผ่านตรงเวลา), 23:00–00:00 **ตัดวิดีโอร่างแรก** จาก footage ดิบ, 01:00 sync |
-| 25 ต.ค. 01:00–07:00 (Boss นอน) | 26–32 | แก้เฉพาะบั๊ก (ไม่เพิ่ม feature) | แก้เฉพาะบั๊ก | แก้เฉพาะบั๊ก | — | คำอธิบายเกมบนหน้า Roblox | smoke test checklist สุดท้าย | เอกสารฉบับเกือบสมบูรณ์ + ข้อความที่ขึ้นบนจอในวิดีโอ | นอน |
+| 25 ต.ค. 01:00–07:00 (Boss นอน) | 26–32 | แก้เฉพาะบั๊ก (ไม่เพิ่ม feature) | แก้เฉพาะบั๊ก | แก้เฉพาะบั๊ก | — | คำอธิบายเกมบนหน้า Roblox (ต้องมี "Needs 2–4 players / ต้องเล่น 2–4 คน") | smoke test checklist สุดท้าย | เอกสารฉบับเกือบสมบูรณ์ + ข้อความที่ขึ้นบนจอในวิดีโอ | นอน |
 | 07:00–08:00 | 32–33 | — | — | — | — | — | Regression เต็มรอบ | — | Sync งานสุดท้าย, ถ้า Flood ไม่เสถียร → เอาออกจากรายการ disasters (แก้ data 1 บรรทัด) → **08:00 CODE FREEZE** |
-| 08:00–09:00 | 33–34 | standby: แก้เฉพาะ Blocker | | | | | **CP4**: เล่นบน live server ทั้ง PC และมือถือ + solo จนจบ | ใส่ลิงก์เกมลงเอกสาร | **Publish เวอร์ชันสุดท้าย** (ตั้งค่า public/compliance ทำไว้แล้วตั้งแต่ H0 และ CP3, อัปเดต icon/thumbnail/คำอธิบาย) + **playtest บน live place** |
+| 08:00–09:00 | 33–34 | standby: แก้เฉพาะ Blocker | | | | | **CP4**: เล่นบน live server 2 คน (PC + มือถือ) จนจบ, ยืนยันว่าคนเดียวบน live รอ "Waiting for players (1/2)" ไม่เริ่มเอง | ใส่ลิงก์เกมลงเอกสาร | **Publish เวอร์ชันสุดท้าย** (ตั้งค่า public/compliance ทำไว้แล้วตั้งแต่ H0 และ CP3, อัปเดต icon/thumbnail/คำอธิบาย) + **playtest บน live place** |
 | 09:00–10:30 | 34–35.5 | — | — | — | — | — | — | — | **วิดีโอ**: ถ่ายช็อตเพิ่ม (pickup) บน live place 20 นาที → ตัดต่อจบ + บรรยาย/ข้อความ 60 นาที → export + อัปโหลด 10 นาที |
 | 10:30–11:15 | 35.5–36.25 | — | — | — | — | — | ตรวจเอกสารเทียบกับเกม live | ใส่ลิงก์วิดีโอ + export เอกสารเป็น PDF | ตรวจเอกสารครั้งสุดท้าย |
 | 11:15–11:30 | 36.25–36.5 | | | | | | | | **ส่งงานทั้ง 3 อย่าง** (เกม + เอกสาร + วิดีโอ) |
@@ -945,15 +946,16 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 
 ### 8.11 Definition of Done (Deadline)
 **Studio (Test → Clients and Servers)**
-- 1 (solo), 2 และ 4 clients เล่นจบ 3 Round ติดกัน ไม่มี error และไม่มีแมพ/instance ค้างข้ามรอบ
+- 2 และ 4 clients เล่นจบ 3 Round ติดกัน (1 client ใช้ได้เฉพาะกับ `DEV_MIN_PLAYERS_STUDIO = 1`) ไม่มี error และไม่มีแมพ/instance ค้างข้ามรอบ
 - เกิดทั้ง ชนะ, แพ้ Collapse, แพ้ Wipe
 - วิทยุต้องกดพร้อมกันครบทุกคนที่ไม่ Eliminated (2 clients = 2 คน) และหลัง 75s ทีม 3–4 คนใช้น้อยลง 1 คนได้
 - Impact ตกโดนผู้เล่นได้ทั้งบนพื้น, ทางลาด, เคาน์เตอร์ และขอบหน้าต่าง แต่ไม่ตกในรัศมี 6 studs รอบ spawn
 - Big Shake ไม่ทำให้ทีมที่ HP เต็มล้มทั้งทีม (damage 15 ต่อครั้ง)
 - ปุ่ม Reset ใช้ไม่ได้ และตัวละครไม่เกิดใหม่เอง
-- **Solo ถูก Eliminated ระหว่างรอกรง**: Departure ไม่นับจนกว่าจะ respawn และเข้าโซน แล้วจบเป็นชนะได้ (หรือแพ้ Collapse ถ้าไม่ทัน) ไม่มี Match ที่จบด้วย Escaped = 0 แบบไม่มีผล
+- **ผู้เล่นที่เหลือคนเดียว (เพื่อนออกกลาง Match) ถูก Eliminated ระหว่างรอกรง**: Departure ไม่นับจนกว่าจะ respawn และเข้าโซน แล้วจบเป็นชนะได้ (หรือแพ้ Collapse ถ้าไม่ทัน) ไม่มี Match ที่จบด้วย Escaped = 0 แบบไม่มีผล
 - **ยืนบน spawn ขอบหน้าต่างช่วง ETA แล้วต้องโดน impact**
-- คนที่ 2 เข้ามาระหว่างนับ solo → เปลี่ยนเป็นนับ co-op และทั้งคู่เข้า Match เดียวกัน
+- คนเดียวใน Lobby บน live: ไม่เริ่ม Match (แสดง "Waiting for players (1/2)"), คนที่ 2 เข้ามา → นับ 30s แล้วทั้งคู่เข้า Match
+- เพื่อนออกกลาง Match 2 คน → คนที่เหลือเล่นต่อจนจบได้ (fallback 3.5)
 - Debug commands ใช้ไม่ได้บน live สำหรับบัญชีที่ไม่ใช่ dev
 
 **ผู้เล่นจริง (Studio multi-client ใช้แทนไม่ได้ เพราะ dev คนเดียวคุมทุก client)**
@@ -961,7 +963,7 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 - มือถือ ≥ 1 เครื่อง: เดิน, กระโดด, แตะ prompt, อ่าน HUD ได้
 
 **ส่งงาน**
-- (1) เกม public เข้าได้ทั้ง PC และมือถือ และเล่นคนเดียวจนจบได้บน live server (เปิด public ครั้งแรกตอน CP3 ไม่ใช่เช้าวันส่ง)
+- (1) เกม public เข้าได้ทั้ง PC และมือถือ และเล่น 2 คนจนจบได้บน live server (เปิด public ครั้งแรกตอน CP3 ไม่ใช่เช้าวันส่ง)
 - (2) เอกสารส่งงานครบทุกหัวข้อใน 8.12 พร้อม screenshot ≥ 6 รูป และลิงก์เกม/วิดีโอใช้งานได้
 - (3) วิดีโอ 60–90s มี Rescue Moment และตอนชนะ อัปโหลดแล้วเปิดได้จากลิงก์
 
@@ -969,11 +971,13 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 
 **เอกสาร** (`docs/submission/SUBMISSION.md` → export PDF) — Lead เขียน, Boss ตรวจ
 
+> **ต้องเขียนชัดเจนทั้งในคำอธิบายหน้าเกม Roblox และในเอกสารส่งงาน (หัวข้อสรุปและวิธีเล่น): "ต้องเล่น 2–4 คน / Needs 2–4 players"** เพราะเกมไม่เริ่มถ้ามีคนเดียว (แนะนำให้กรรมการชวนเพื่อนอีก 1 คน หรือเข้า server พร้อมกัน)
+>
 > **เนื้อหาในเอกสารส่งงานต้องมาจากหัวข้อ 8** (แมพ Deadline cut, 2 Step + Extraction, Lobby แบบแท่น, pacing 8.5) ห้ามใช้ pitch/timeline 3 Step/Lobby กรงยักษ์จากหัวข้อ 1–2 ซึ่งเป็นแมพเต็มหลังส่งงาน
 | หัวข้อ | เนื้อหา | ที่มา |
 |---|---|---|
-| สรุปโปรเจกต์ | ชื่อเกม (We R in Trouble / Roblox Hamster Conquror the world), pitch 2–3 บรรทัด, กลุ่มเป้าหมาย, ลิงก์เกม, ลิงก์วิดีโอ | หัวข้อ 1 |
-| วิธีเล่น | ปุ่ม (เดิน/กระโดด/E หรือแตะ), เป้าหมาย 2 Step + Extraction, Downed/Revive, ชนะ/แพ้ — แบบสั้น มีรูปประกอบ | 8.4, 5 |
+| สรุปโปรเจกต์ | ชื่อเกม (We R in Trouble / Roblox Hamster Conquror the world), pitch 2–3 บรรทัด, **"ต้องเล่น 2–4 คน / Needs 2–4 players"**, กลุ่มเป้าหมาย, ลิงก์เกม, ลิงก์วิดีโอ | หัวข้อ 1 |
+| วิธีเล่น | **ต้องมีผู้เล่น 2–4 คน**, ปุ่ม (เดิน/กระโดด/E หรือแตะ), เป้าหมาย 2 Step + Extraction, Downed/Revive, ชนะ/แพ้ — แบบสั้น มีรูปประกอบ | 8.4, 5 |
 | ฟีเจอร์เด่น | co-op ที่บังคับจริง (วิทยุ), ภัยแบบสุ่ม + 4 Stage, Rescue Moment, รองรับมือถือ, ระบบที่เปลี่ยนธีมได้ด้วย data | 3, 4, 10 |
 | ทีมและ workflow ของ agent | Boss + บทบาท agent ตาม TEAM.md, เส้นทางงาน (โจทย์ → ทำ → review → แก้ ≤ 2 รอบ → Boss), ตัวอย่างจริง: GDD ผ่าน review 2 รอบ (FAIL → PASS WITH FIXES), Rojo + GitHub | TEAM.md, `docs/reviews/` |
 | Screenshots | 6–10 รูป: Lobby, แฮมสเตอร์บนพื้นครัวเทียบกับโต๊ะยักษ์, วิ่งวงล้อ, ถือถ่าน, กดวิทยุ 4 ตัวพร้อมกัน, วงแดง + ของตก, เพื่อนกำลัง revive ตัวที่มึน, Rescue Moment, Result ชนะ | ถ่าย 21:00–22:30 |
@@ -1001,7 +1005,8 @@ Stage, เวลา Collapse 7:00 และเส้นตายปลดล็�
 | สเกลแมพ (สำหรับ Level/Art ไม่ใช่โค้ด) | 1 stud = 2 cm | | 1.1 |
 | **Round** | | | |
 | `MAX_PLAYERS` | 4 | คน | (รอ Boss ยืนยัน Q1-ก) |
-| `MIN_PLAYERS_TO_START` | 2 | คน | (รอ Boss ยืนยัน Q1-ก/ค) |
+| `MIN_PLAYERS_TO_START` | 2 | คน | Boss ตัดสินแล้ว (ไม่มี solo start) |
+| `DEV_MIN_PLAYERS_STUDIO` | 1 | คน | ใช้เฉพาะเมื่อ `RunService:IsStudio()` บน live ไม่มีผล |
 | `INTERMISSION_TIME` | 30 | s | |
 | `BRIEFING_TIME` | 5 | s | อยู่ใน Calm |
 | `RESULT_TIME` | 15 | s | |
@@ -1135,10 +1140,9 @@ Boss ตัดสินแล้ว: ผู้เล่นเป็นแฮม�
   → **แนะนำ: ใช่** เพราะทีมเล็กสื่อสารกันง่ายและแมพสร้างเร็ว ถ้าอยากได้ 6 คน ค่อยขยายใน M2 โดยเพิ่ม anchor/item
 - **ข. ความยาว Match + ช่วงรอกรง**: Match ยาวสุด 7:00 (ทีมปกติจบ ~4:35–4:55) และหลังปลดล็อกหน้าต่างต้องเอาตัวรอด 60s ใน Critical ก่อนกรงจะมาถึง
   → **แนะนำ: ใช่** เพราะงานที่ขยายตามจำนวนคนทำให้ทุกทีมใช้เวลาใกล้เคียงกัน และช่วงรอทำให้ทุก Match จบด้วยช่วงที่ตื่นเต้นเสมอ (ตาราง 2.3)
-- **ค. เล่นคนเดียวได้ไหม**: Deadline build ให้เริ่ม solo match อัตโนมัติเมื่อรอใน Lobby คนเดียว 20s (MultiHold เหลือ required = 1) เพราะคนตรวจงานอาจเข้ามาเล่นคนเดียว โหมดหลักยังเป็น co-op 2–4 คน
-  → **แนะนำ: ใช่ ให้เล่นคนเดียวได้แบบนี้ตอนส่งงาน** หลังส่งงานค่อยทำเป็นปุ่ม "Start Solo (Practice)" ที่ได้รางวัล 50% (ถ้า Boss ไม่ต้องการ solo ให้ตั้ง `SOLO_START_AFTER` = ปิด ค่าเดียว)
+- **ค. เล่นคนเดียวได้ไหม** — ✅ **Boss ตัดสินแล้ว (v0.5): ไม่มี solo start** Match เริ่มได้เมื่อ ≥ 2 คนเท่านั้น ใน Studio ใช้ `DEV_MIN_PLAYERS_STUDIO = 1` เพื่อเทสต์ หน้าเกมและเอกสารส่งงานต้องเขียน "ต้องเล่น 2–4 คน / Needs 2–4 players" ส่วน fallback เมื่อเพื่อนออกกลาง Match (3.5) ยังอยู่ (ไม่ใช่ solo mode) โหมดฝึกคนเดียวอยู่ในรายการหลังส่งงาน
 
-จุดที่ได้รับผล: 1, 2.1, 2.3, 8.1, 8.6, 9 (`MAX_PLAYERS`, `MIN_PLAYERS_TO_START`, `SOLO_START_AFTER`, `MATCH_HARD_LIMIT`, `exitArrivalDelay`)
+จุดที่ได้รับผล: 1, 2.1, 2.3, 8.1, 8.6, 9 (`MAX_PLAYERS`, `MIN_PLAYERS_TO_START`, `DEV_MIN_PLAYERS_STUDIO`, `MATCH_HARD_LIMIT`, `exitArrivalDelay`)
 
 **Q2. ความเข้มของ co-op**: แฮมสเตอร์ทุกตัวที่ยังไม่ปุ๊ฟต้องกดวิทยุ/สลักพร้อมกัน (ทีม 4 = 4 ตัว) และกรงจะออกเมื่อทุกตัวอยู่ในกรงแล้ว โดยมีตาข่าย 3 ชั้น:
 - (1) คนที่ AFK 60s ไม่นับ
@@ -1243,3 +1247,9 @@ Boss ตัดสินแล้ว: ผู้เล่นเป็นแฮม�
 | D7 | คนที่ 2 เข้ามาระหว่างนับ solo → เปลี่ยนเป็นนับ co-op (เวลาที่เหลือ = max(เหลือ, 10s)) (8.6, 8.11) |
 | D8 | 8.12 ระบุให้เอกสารส่งงานใช้เนื้อหาจากหัวข้อ 8 + หมายเหตุใน 2.2 ว่าเป็นแมพเต็มหลังส่งงาน |
 | D9 | กำแพง/เพดานล่องหนทั้งหมดตั้ง `CanQuery = false` (8.3) |
+
+## 16. Changelog v5 (Boss อนุมัติ + ปิด solo start)
+
+1. **Solo start ปิด**: ลบการนับ solo 20s ทั้งหมด (1, 2.1, 8.1, 8.6, 8.9, 8.11, 9) Match เริ่มได้เมื่อ ≥ 2 คนเสมอบน live ส่วน fallback เมื่อเพื่อนออกกลาง Match (3.5) ยังอยู่
+2. เพิ่ม `DEV_MIN_PLAYERS_STUDIO = 1` (เฉพาะ Studio ไม่มีผลบน live) แทน `DEV_ALLOW_SOLO` / `SOLO_START_AFTER` เพื่อให้ agent เทสต์คนเดียวได้
+3. 8.12: หน้าเกม Roblox + เอกสารส่งงานต้องเขียน "ต้องเล่น 2–4 คน / Needs 2–4 players" และ Q1-ค ใน 11 เปลี่ยนเป็น "ตัดสินแล้ว"
