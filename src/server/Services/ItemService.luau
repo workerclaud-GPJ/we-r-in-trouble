@@ -559,10 +559,12 @@ local function respawnLost(item: ItemRec)
 	warn(`[ItemService] {item.itemType} was destroyed (fell out of the world) — rebuilt at origin`)
 end
 
--- Play area for the out-of-bounds check: map PrimaryPart footprint + exit zones (+ margin).
+-- Play area for the out-of-bounds check: map DropArea (full floor; the floor may be split
+-- around the drain) or PrimaryPart footprint + exit zones (+ margin).
 local function playArea(): (Vector3?, Vector3?)
 	local map = MapService.getMap()
-	local floor = map and map.PrimaryPart
+	local dropArea = map and map:FindFirstChild(Contract.Name.DropArea, true)
+	local floor = if dropArea and dropArea:IsA("BasePart") then dropArea else map and map.PrimaryPart
 	if not floor then
 		return nil, nil
 	end

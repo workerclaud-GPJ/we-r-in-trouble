@@ -52,6 +52,7 @@ local NAMES = table.freeze({
 	StepName = A.StepName,
 	LastChance = A.LastChance,
 	ExitOpen = A.ExitOpen,
+	ExitKind = A.ExitKind,
 	CarrierArrivesAt = A.CarrierArrivesAt,
 	CarrierArrived = A.CarrierArrived,
 	DepartureRunning = A.DepartureRunning,
@@ -180,6 +181,7 @@ export type Snapshot = {
 	objectives: { Objective },
 
 	exitOpen: boolean,
+	exitKind: string?, -- nil = rescue carrier; "Window" | "Drain" = direct exit (escape scenarios)
 	carrierArrivesAt: number?,
 	carrierArrived: boolean,
 	departureRunning: boolean,
@@ -503,6 +505,7 @@ function StateAdapter.snapshot(): Snapshot
 		objectives = objectives,
 
 		exitOpen = bool(rs, NAMES.ExitOpen) or false,
+		exitKind = str(rs, NAMES.ExitKind),
 		carrierArrivesAt = num(rs, NAMES.CarrierArrivesAt),
 		carrierArrived = bool(rs, NAMES.CarrierArrived) or false,
 		departureRunning = bool(rs, NAMES.DepartureRunning) or false,

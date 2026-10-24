@@ -120,6 +120,9 @@ export type ObjectiveDef = {
 	mode: string?, -- "Cumulative" (Continuous is post-deadline)
 	holdTime: number?,
 	assist: boolean?,
+	-- Escape scenarios: MapService.setFlag(setsFlag) when this objective completes
+	-- (reveals FlagReveal parts with RevealedBy = flag, e.g. the cable bridge)
+	setsFlag: string?,
 }
 
 export type StepDef = {
@@ -137,7 +140,15 @@ export type MissionDef = {
 	exitArrivalDelay: number,
 	exitVehicleAsset: string?,
 	steps: { StepDef },
+	-- Escape scenarios (Features.NewMission, Config.Round.SCENARIO_IDS):
+	exitKind: string?, -- nil = rescue carrier (default); "Window" | "Drain" = direct exit, no carrier
+	exitId: string?, -- ExitZone attr ExitId to use (zones without ExitId count as "Window"); others are untagged
+	hideParts: { string }?, -- map parts (names, searched recursively) removed for this scenario
+	fixedLoot: { FixedLoot }?, -- items placed on named ScenarioOnly ItemSpawns before the random loot
+	winCamera: string?, -- map part whose CFrame replaces WinCameraPoint for this scenario
 }
+
+export type FixedLoot = { itemType: string, spawn: string }
 
 export type ItemSize = "Small" | "Medium"
 

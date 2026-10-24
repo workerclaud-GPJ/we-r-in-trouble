@@ -42,6 +42,52 @@ local function asBasePart(inst: Instance): BasePart?
 	return if inst:IsA("BasePart") then inst else nil
 end
 
+-- FlagReveal: parts of a tagged Part/Model are hidden at map load (shown values kept as
+-- attributes) and shown again when MapService.setFlag(RevealedBy) runs.
+local REVEAL_T, REVEAL_C, REVEAL_Q = "RevealT", "RevealC", "RevealQ"
+
+local function partsOf(inst: Instance): { BasePart }
+	local out: { BasePart } = {}
+	if inst:IsA("BasePart") then
+		table.insert(out, inst)
+	end
+	for _, d in inst:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
+local function conceal(inst: Instance)
+	for _, p in partsOf(inst) do
+		if p:GetAttribute(REVEAL_T) == nil then
+			p:SetAttribute(REVEAL_T, p.Transparency)
+			p:SetAttribute(REVEAL_C, p.CanCollide)
+			p:SetAttribute(REVEAL_Q, p.CanQuery)
+		end
+		p.Transparency = 1
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+	end
+end
+
+local function reveal(inst: Instance)
+	for _, p in partsOf(inst) do
+		local t, c, q = p:GetAttribute(REVEAL_T), p:GetAttribute(REVEAL_C), p:GetAttribute(REVEAL_Q)
+		if typeof(t) == "number" then
+			p.Transparency = t
+		end
+		if typeof(c) == "boolean" then
+			p.CanCollide = c
+		end
+		if typeof(q) == "boolean" then
+			p.CanQuery = q
+		end
+	end
+end
+
 -- Finds an optional art asset: Assets.<sub>.<name>, then Assets.<name>
 -- (ReplicatedStorage.Assets first, then ServerStorage.Assets).
 function MapService.findAsset(name: string?, sub: string?): Instance?
@@ -87,6 +133,11 @@ function MapService.loadMap(mapId: string): Model?
 		end
 		for _, d in pieces do
 			d:Destroy()
+		end
+	end
+	for _, d in clone:GetDescendants() do
+		if d:HasTag(Tag.FlagReveal) then
+			conceal(d) -- scenario parts: shown by setFlag(RevealedBy)
 		end
 	end
 	clone.Parent = folder
@@ -203,7 +254,56 @@ end
 ----------------------------------------------------------------------------
 
 function MapService.setFlag(name: string)
+	if flags[name] then
+		return
+	end
 	flags[name] = true
+	for _, inst in MapService.tagged(Tag.FlagReveal) do
+		if inst:GetAttribute(Attr.RevealedBy) == name then
+			reveal(inst)
+		end
+	end
+end
+
+-- Escape scenarios: hide map parts by name (MissionDef.hideParts) for this match only.
+function MapService.hideParts(names: { string }?)
+	local model = mapModel
+	if not (model and names) then
+		return
+	end
+	for _, name in names do
+		local found = false
+		for _, d in model:GetDescendants() do
+			if d.Name == name then
+				conceal(d)
+				found = true
+			end
+		end
+		if not found then
+			warn(`[MapService] hideParts: {name} not in map`)
+		end
+	end
+end
+
+-- Escape scenarios: keep only the ExitZones of `exitId` (zones without ExitId are "Window");
+-- the others lose their tag so neither the server nor the HUD uses them this match.
+function MapService.keepExitZones(exitId: string?)
+	local want = exitId or "Window"
+	local kept: { BasePart } = {}
+	for _, zone in exitZones do
+		local id = zone:GetAttribute(Attr.ExitId)
+		local zid = if typeof(id) == "string" and id ~= "" then id else "Window"
+		if zid == want then
+			table.insert(kept, zone)
+		else
+			zone:RemoveTag(Tag.ExitZone)
+		end
+	end
+	if #kept == 0 then
+		warn(`[MapService] no ExitZone for exit {want}; keeping all`)
+		return
+	end
+	exitZones = kept
 end
 
 function MapService.hasFlag(name: string): boolean

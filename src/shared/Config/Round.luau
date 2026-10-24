@@ -25,5 +25,11 @@ return table.freeze({
 
 	DISASTER_NO_REPEAT = true,
 	MISSION_ID = "MidnightKitchen_CallForHelp",
-	NEW_MISSION_ID = "MidnightKitchen_CallForHelp_Capability", -- used instead when Features.NewMission
+	NEW_MISSION_ID = "MidnightKitchen_CallForHelp_Capability", -- fallback when SCENARIO_IDS is empty
+	-- Features.NewMission: escape scenarios, one per match (equal odds, no repeat twice in a row)
+	SCENARIO_IDS = {
+		"MidnightKitchen_CallForHelp_Capability", -- 1: batteries + wheel + radios -> rescue carrier
+		"MidnightKitchen_CableWindow", -- 2: cable bridge up to the counter, scissors pry the window
+		"MidnightKitchen_Drain", -- 3: scissors pry the drain grate, cable down the drain
+	},
 })

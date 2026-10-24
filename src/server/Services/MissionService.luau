@@ -142,6 +142,9 @@ local function markDone(rt: Runtime)
 	setOn(rt, Attr.Active, false)
 	setOn(rt, Attr.Progress, 1)
 	setPromptsEnabled(rt, false)
+	if rt.def.setsFlag then
+		MapService.setFlag(rt.def.setsFlag) -- e.g. the cable bridge appears
+	end
 	advance()
 end
 
