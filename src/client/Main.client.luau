@@ -23,6 +23,7 @@ start(Controllers:WaitForChild("RouteToppleController")) -- no-op unless Config.
 start(Controllers:WaitForChild("HazardFxController"))
 start(Controllers:WaitForChild("ActivityController"))
 start(Controllers:WaitForChild("DebugController"))
+start(Controllers:WaitForChild("DropController"))
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 
