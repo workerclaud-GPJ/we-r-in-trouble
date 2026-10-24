@@ -68,6 +68,10 @@ MISSIONS.MidnightKitchen_CallForHelp_Capability = {
 -- The cookbook ramp (stack -> counter) is gone in every scenario: the counter is reached by
 -- casting the charger cable at a hook (CableThrowService) or, in an Earthquake, a toppled board.
 local NO_COOKBOOK_RAMP = { "Ramp2_Cookbooks_Collider", "Ramp2_Cookbooks_Visual" }
+-- Items decide the exit: each scenario only spawns its own key items (fixedLoot) plus items that
+-- do not belong to another exit, so the items you find tell you which way out this round is.
+-- Bottlecaps are clutter for now (future: the bottle-cap raft escape).
+local CLUTTER = { { itemType = "Bottlecap", weight = 1 } }
 local TABLE_CABLES = {
 	{ itemType = "ChargerCable", spawn = "Scn_Table1" },
 	{ itemType = "ChargerCable", spawn = "Scn_Table2" },
@@ -88,6 +92,8 @@ MISSIONS.MidnightKitchen_CallForHelp_Table = {
 	cableThrow = true,
 	hideParts = NO_COOKBOOK_RAMP,
 	fixedLoot = TABLE_CABLES,
+	-- 2 cables (fixed) + batteries (requirement, max team 3 + 1 spare) + clutter = 8
+	loot = { budget = 8, entries = { { itemType = "Battery", weight = 1 }, { itemType = "Bottlecap", weight = 1 } } },
 	steps = {
 		{
 			id = "PowerUp",
@@ -126,6 +132,7 @@ MISSIONS.MidnightKitchen_CableWindow = {
 		TABLE_CABLES[2],
 		{ itemType = "Scissors", spawn = "Scn_CounterW" },
 	},
+	loot = { budget = 6, entries = CLUTTER }, -- 2 cables + scissors + 3 bottlecaps
 	steps = {
 		{
 			id = "CableBridge",
@@ -169,6 +176,7 @@ MISSIONS.MidnightKitchen_Drain = {
 		{ itemType = "Scissors", spawn = "Scn_Pantry" },
 		{ itemType = "ChargerCable", spawn = "Scn_BackCorner" },
 	},
+	loot = { budget = 5, entries = CLUTTER }, -- scissors + cable + 3 bottlecaps
 	steps = {
 		{
 			id = "PryGrate",

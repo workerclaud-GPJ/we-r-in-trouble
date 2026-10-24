@@ -368,7 +368,7 @@ end
 ----------------------------------------------------------------------------
 
 local function spawnWithSeed(mission: Types.MissionDef, seed: number): number
-	local loot = Config.Loot[mission.mapId]
+	local loot = mission.loot or Config.Loot[mission.mapId]
 	if not loot then
 		warn(`[Loot] no Config.Loot entry for map {mission.mapId}`)
 		return 0
@@ -424,7 +424,7 @@ function LootService.check(n: number, missionOverride: Types.MissionDef?): strin
 	if not mission then
 		return "no mission"
 	end
-	local loot = Config.Loot[mission.mapId]
+	local loot = mission.loot or Config.Loot[mission.mapId]
 	if not loot then
 		return `no Config.Loot for {mission.mapId}`
 	end
