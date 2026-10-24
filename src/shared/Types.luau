@@ -113,6 +113,8 @@ export type ObjectiveDef = {
 	itemType: string?,
 	minCount: number?,
 	maxCount: number?,
+	capability: string?, -- Features.CapabilitySpawn: accept any item with this capability (alternative to itemType)
+	count: number?, -- fixed item count (overrides the team-size clamp when set)
 	-- MultiHold
 	anchorCount: number?,
 	mode: string?, -- "Cumulative" (Continuous is post-deadline)
@@ -137,11 +139,26 @@ export type MissionDef = {
 	steps: { StepDef },
 }
 
+export type ItemSize = "Small" | "Medium"
+
+-- Capabilities: "Power" | "Cut" | "Span" | "Pry" | "Contain" | "Rope"
 export type ItemDef = {
 	id: string,
 	displayName: string,
-	size: string, -- "Small" (Heavy is post-deadline)
+	size: ItemSize, -- "Small" | "Medium" (Medium: slower carry; Heavy is post-deadline)
 	model: string?, -- asset name under Assets
+	capabilities: { string },
+	-- Features.ItemPhysics: CustomPhysicalProperties (nil = Config.Interaction defaults)
+	density: number?,
+	friction: number?,
+	elasticity: number?,
+}
+
+-- Config/Loot (Features.CapabilitySpawn)
+export type LootEntry = { itemType: string, weight: number }
+export type LootTableDef = {
+	budget: number, -- total items spawned per round (raised if requirements need more)
+	entries: { LootEntry },
 }
 
 return {}

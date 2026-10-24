@@ -22,4 +22,6 @@ return table.freeze({
 	Cosmetics = require(script.Cosmetics),
 	Presentation = require(script.Presentation),
 	Animation = require(script.Animation),
+	Features = require(script.Features),
+	Loot = require(script.Loot),
 })

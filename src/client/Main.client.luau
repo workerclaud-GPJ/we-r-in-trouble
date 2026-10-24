@@ -19,6 +19,7 @@ start(Controllers:WaitForChild("MovementController"))
 start(Controllers:WaitForChild("PromptController"))
 start(Controllers:WaitForChild("EffectsController"))
 start(Controllers:WaitForChild("ToppleController"))
+start(Controllers:WaitForChild("RouteToppleController")) -- no-op unless Config.Features.RouteTopple
 start(Controllers:WaitForChild("HazardFxController"))
 start(Controllers:WaitForChild("ActivityController"))
 start(Controllers:WaitForChild("DebugController"))

@@ -21,6 +21,7 @@ local DebugCommands = require(Services.DebugCommands)
 local CosmeticsService = require(Services.CosmeticsService)
 local RoundService = require(Services.RoundService)
 local DashService = require(Services.DashService)
+local RouteToppleService = require(Services.RouteToppleService)
 
 MapService.ensureLobby()
 HoldService.start()
@@ -30,4 +31,5 @@ CosmeticsService.start() -- before PlayerStateService so lobby characters get fu
 PlayerStateService.start() -- connects PlayerAdded last so every listener above is ready
 DebugCommands.start()
 DashService.start()
+RouteToppleService.start() -- boot check only; no-op while Config.Features.RouteTopple is false
 RoundService.start()

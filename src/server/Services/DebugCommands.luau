@@ -9,7 +9,10 @@
 
 	Commands (case-insensitive): skipStep | setStage <Calm|Warning|Active|Critical> | unlockExit |
 	  setHP <n> [player] | spawnDummyHolder <A-D> | endMatch <win|lose> | startNow |
-	  setDisaster <Earthquake|Flood> (next match; swaps the running one too) | triggerEvent <id>
+	  setDisaster <Earthquake|Flood> (next match; swaps the running one too) | triggerEvent <id> |
+	  topple [all] (RouteTopple: next eligible piece now, or all; needs Config.Features.RouteTopple) |
+	  loot <seed> (re-roll this round's loot / seed the next round; Features.CapabilitySpawn) |
+	  lootCheck [n] (simulate seeds 1..n, no instances; prints failed count, must be 0)
 ]]
 
 local Players = game:GetService("Players")
@@ -29,6 +32,8 @@ local MissionService = require(script.Parent.MissionService)
 local RoundService = require(script.Parent.RoundService)
 local EventService = require(script.Parent.EventService)
 local RoundState = require(script.Parent.RoundState)
+local RouteToppleService = require(script.Parent.RouteToppleService)
+local LootService = require(script.Parent.LootService)
 
 local D = Config.Debug
 
@@ -164,6 +169,25 @@ function DebugCommands.run(text: string, caller: Player?): string
 		if not ok then
 			return reason or "failed"
 		end
+	elseif cmd == "topple" then
+		local mode = string.lower(a1 or "")
+		if mode ~= "" and mode ~= "all" then
+			return "usage: topple [all]"
+		end
+		local ok, reason = RouteToppleService.debugTopple(mode == "all")
+		if not ok then
+			return reason or "failed"
+		end
+	elseif cmd == "loot" then
+		local seed = tonumber(a1)
+		if not seed then
+			return "usage: loot <seed>"
+		end
+		local status = LootService.reroll(seed)
+		print(`[Debug] {status}`)
+		return status
+	elseif cmd == "lootcheck" then
+		return LootService.check(tonumber(a1) or 100)
 	else
 		return "unknown command"
 	end
