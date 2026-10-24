@@ -35,6 +35,7 @@ Contract.Tag = table.freeze({
 	EventLane = "EventLane", -- Part, attr EventId: lane band for IceLane events (LookVector = slide dir)
 	RisingVolume = "RisingVolume", -- runtime: the volume (water) Part in Map.Runtime (server creates)
 	RouteTopple = "RouteTopple", -- Model (PrimaryPart + FallenPose): server topples it into a new walkable route
+	CableRoute = "CableRoute", -- Model: ThrowSpot part + Hook + Cable (FlagReveal "Cable_<RouteId>")
 	FlagReveal = "FlagReveal", -- Part/Model hidden at map load; shown when MapService.setFlag(attr RevealedBy)
 })
 
@@ -84,6 +85,7 @@ Contract.Attr = table.freeze({
 	ExitOpen = "ExitOpen",
 	ExitKind = "ExitKind", -- RoundState: nil = rescue carrier, "Window" | "Drain" = direct exit (escape scenarios)
 	ScenarioId = "ScenarioId", -- RoundState: mission id of the running escape scenario
+	CableThrow = "CableThrow", -- RoundState: true while cable casting is allowed this match
 	CarrierArrivesAt = "CarrierArrivesAt",
 	CarrierArrived = "CarrierArrived",
 	CarrierArrivedAt = "CarrierArrivedAt",
@@ -157,6 +159,16 @@ Contract.Attr = table.freeze({
 	RevealedBy = "RevealedBy", -- FlagReveal: flag that shows it
 	ScenarioOnly = "ScenarioOnly", -- ItemSpawn: only MissionDef.fixedLoot uses it (never random loot)
 	ExitId = "ExitId", -- ExitZone: which exit it belongs to (nil = "Window")
+	-- CableRoute model (Level sets the first four; server sets Attached / Cast*)
+	RouteId = "RouteId",
+	RequiredPower = "RequiredPower", -- 0..1: cast power that hooks it
+	PowerWindow = "PowerWindow", -- +- tolerance around RequiredPower
+	ReachesCounter = "ReachesCounter", -- true: hooking it completes the CableHook objective
+	Attached = "Attached",
+	CastAt = "CastAt", -- server time of the last cast (clients animate the throw)
+	CastOk = "CastOk",
+	CastFrom = "CastFrom", -- Vector3
+	CastTo = "CastTo", -- Vector3 (hook, or where the cable landed)
 	-- Map markup (server sets)
 	Open = "Open",
 	Unlocked = "Unlocked",

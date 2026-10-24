@@ -64,11 +64,51 @@ MISSIONS.MidnightKitchen_CallForHelp_Capability = {
 
 
 -- Escape scenarios (Features.NewMission + Features.CapabilitySpawn, Config.Round.SCENARIO_IDS).
--- Map markup: tools/AddEscapeScenarios.luau (anchors, ScenarioOnly ItemSpawns, cable bridge, drain).
+-- Map markup: tools/AddEscapeScenarios.luau (anchors, ScenarioOnly ItemSpawns, cable routes, drain).
+-- The cookbook ramp (stack -> counter) is gone in every scenario: the counter is reached by
+-- casting the charger cable at a hook (CableThrowService) or, in an Earthquake, a toppled board.
+local NO_COOKBOOK_RAMP = { "Ramp2_Cookbooks_Collider", "Ramp2_Cookbooks_Visual" }
+local TABLE_CABLES = {
+	{ itemType = "ChargerCable", spawn = "Scn_Table1" },
+	{ itemType = "ChargerCable", spawn = "Scn_Table2" },
+}
 
--- 2) Cable bridge -> window. The cookbook ramp is gone (books fell): hang the charger cable from
---    the cookbook stack to the counter, climb up, pry the window latch with scissors, push it open
---    together and jump out. Earthquake: the toppled boards are a second way up.
+-- 1) Call for help, table start. Everyone starts on the dining table with two charger cables:
+--    cast them to reach the counter (radios) and to climb back up; batteries + wheel on the floor.
+--    Batteries only for the charger (a cable is never used up by the socket here).
+MISSIONS.MidnightKitchen_CallForHelp_Table = {
+	id = "MidnightKitchen_CallForHelp_Table",
+	mapId = "MidnightKitchen",
+	displayName = "Call for Help",
+	disasters = { "Earthquake", "Flood" },
+	exitFlag = "WindowOpen",
+	exitArrivalDelay = 60,
+	exitVehicleAsset = "RescueCarrier",
+	startFlag = "TableStart",
+	cableThrow = true,
+	hideParts = NO_COOKBOOK_RAMP,
+	fixedLoot = TABLE_CABLES,
+	steps = {
+		{
+			id = "PowerUp",
+			displayName = "Power up the charger",
+			objectives = {
+				{ id = "RunWheel", kind = "Repair", displayName = "obj.run_wheel", holdAnim = "RunInWheel", actionText = "Run", duration = 45, maxStack = 2 },
+				{ id = "DeliverBatteries", kind = "Deliver", displayName = "obj.deliver_batteries", actionText = "Insert", itemType = "Battery", minCount = 1, maxCount = 3 },
+			},
+		},
+		{
+			id = "CallForHelp",
+			displayName = "Call for help",
+			objectives = {
+				{ id = "CallForHelp", kind = "MultiHold", displayName = "obj.call_for_help", holdAnim = "ShoutRadio", actionText = "Shout", anchorCount = 4, mode = "Cumulative", holdTime = 45, assist = true },
+			},
+		},
+	},
+}
+
+-- 2) Window. Start on the table, cast a cable to the counter, take the scissors, pry the window
+--    latch, push the window open together and jump out.
 MISSIONS.MidnightKitchen_CableWindow = {
 	id = "MidnightKitchen_CableWindow",
 	mapId = "MidnightKitchen",
@@ -78,17 +118,20 @@ MISSIONS.MidnightKitchen_CableWindow = {
 	exitArrivalDelay = 0,
 	exitKind = "Window",
 	exitId = "Window",
-	hideParts = { "Ramp2_Cookbooks_Collider", "Ramp2_Cookbooks_Visual" },
+	startFlag = "TableStart",
+	cableThrow = true,
+	hideParts = NO_COOKBOOK_RAMP,
 	fixedLoot = {
-		{ itemType = "ChargerCable", spawn = "Scn_UnderTable" },
+		TABLE_CABLES[1],
+		TABLE_CABLES[2],
 		{ itemType = "Scissors", spawn = "Scn_CounterW" },
 	},
 	steps = {
 		{
 			id = "CableBridge",
-			displayName = "Build a cable bridge",
+			displayName = "Cast the cable to the counter",
 			objectives = {
-				{ id = "HangCable", kind = "Deliver", displayName = "obj.hang_cable", actionText = "Hang cable", capability = "Rope", itemType = "ChargerCable", count = 1, setsFlag = "CableBridge" },
+				{ id = "CableToCounter", kind = "CableHook", displayName = "obj.cable_counter" },
 			},
 		},
 		{
@@ -108,8 +151,9 @@ MISSIONS.MidnightKitchen_CableWindow = {
 	},
 }
 
--- 3) Drain. Scissors pry the drain grate under the step chair, lift it together, tie the charger
---    cable to the drain and climb down into the pipe that leads outside.
+-- 3) Drain. Start in the cage (floor). Scissors pry the drain grate under the step chair, lift it
+--    together, tie the charger cable to the drain and climb down into the pipe. No casting here:
+--    the only cable is needed for the drain.
 MISSIONS.MidnightKitchen_Drain = {
 	id = "MidnightKitchen_Drain",
 	mapId = "MidnightKitchen",
@@ -120,6 +164,7 @@ MISSIONS.MidnightKitchen_Drain = {
 	exitKind = "Drain",
 	exitId = "Drain",
 	winCamera = "DrainCameraPoint",
+	hideParts = NO_COOKBOOK_RAMP,
 	fixedLoot = {
 		{ itemType = "Scissors", spawn = "Scn_Pantry" },
 		{ itemType = "ChargerCable", spawn = "Scn_BackCorner" },

@@ -13,9 +13,13 @@
 	Adds (map-local coords = world; floor top Y 0, counter tops Y 45, inner window sill top Y 61):
 	  * ItemSpawns Scn_* (ScenarioOnly = true, ItemType "Scenario"): used only by
 	    MissionDef.fixedLoot, never by random loot or the legacy Battery spawn.
-	  * Window scenario: CableBridge (FlagReveal, RevealedBy "CableBridge") = walkable cable
-	    on the cookbook stack in place of the cookbook ramp (hidden by MissionDef.hideParts);
-	    anchors HangCable (stack top), PryLatch (window latch), PushWindow A/B (sill).
+	  * Window scenario anchors: PryLatch (window latch), PushWindow A/B (sill).
+	  * Table start: 4 PlayerSpawn pads on the dining table (EnabledBy "TableStart", Priority 0).
+	  * Cable routes (CableThrowService, tag CableRoute): TN table->north counter bridge,
+	    TE table->east counter bridge, FC floor->north counter climbing cable, TF floor<->table
+	    climbing cable. Each: ThrowSpot, HookPoint + hook art, Cable (FlagReveal "Cable_<id>")
+	    = walkable plank or invisible TrussPart + the visible cable. Anchors ObjectiveId
+	    "CableToCounter" on the counter hooks (markers for the CableHook objective).
 	  * Drain scenario: 8x8 hole in the floor under the step chair (DRAIN_CENTER), a metal
 	    shaft down to Y -16, DrainGrate (LockedDoor, UnlockedBy "DrainOpen"), drain cable
 	    (FlagReveal "DrainOpen"), popped screws (FlagReveal "GrateLoose"), anchors PryGrate,
@@ -133,7 +137,8 @@ root.Parent = map
 ----------------------------------------------------------------------------
 
 local SPAWNS: { { name: string, pos: Vector3, note: string } } = {
-	{ name = "Scn_UnderTable", pos = Vector3.new(70, 0, 88), note = "window: charger cable, floor under the dining table" },
+	{ name = "Scn_Table1", pos = Vector3.new(62, 38.25, 68), note = "table start: charger cable 1 (dining table top)" },
+	{ name = "Scn_Table2", pos = Vector3.new(78, 38.25, 97), note = "table start: charger cable 2 (dining table top)" },
 	{ name = "Scn_CounterW", pos = Vector3.new(58, 45, 25), note = "window: scissors, north counter west of the dish rack" },
 	{ name = "Scn_Pantry", pos = Vector3.new(12, 0, 28), note = "drain: scissors, floor by the pantry door" },
 	{ name = "Scn_BackCorner", pos = Vector3.new(150, 0, 100), note = "drain: charger cable, floor corner by the back door" },
@@ -157,50 +162,6 @@ local win = Instance.new("Folder")
 win.Name = "Window"
 win.Parent = root
 
-local ramp = routes:FindFirstChild("Ramp2_Cookbooks_Collider")
-local rampVis = routes:FindFirstChild("Ramp2_Cookbooks_Visual")
-if ramp and ramp:IsA("BasePart") and rampVis and rampVis:IsA("BasePart") then
-	local bridge = Instance.new("Model")
-	bridge.Name = "CableBridge"
-	bridge.Parent = win
-	-- walkable collider: same slope as the cookbook ramp, narrower (the cable bundle)
-	local col = ramp:Clone()
-	col.Name = "CableBridge_Collider"
-	col.Size = Vector3.new(6, ramp.Size.Y, ramp.Size.Z)
-	col.Transparency = 1
-	col.CanCollide = true
-	col.CanQuery = true
-	col:ClearAllChildren()
-	col.Parent = bridge
-	-- the flat charger cable lying on the slope + a second strand
-	local up = rampVis.CFrame.UpVector
-	local half = rampVis.Size.Z / 2
-	local lo = rampVis.CFrame * CFrame.new(0, 0, half) -- B end (low, stack top)
-	local hi = rampVis.CFrame * CFrame.new(0, 0, -half) -- A end (high, counter)
-	local loP, hiP = lo.Position, hi.Position
-	if loP.Y > hiP.Y then
-		loP, hiP = hiP, loP
-	end
-	local ribbon = part(bridge, "CableBridge_Ribbon", Vector3.new(5, 0.5, rampVis.Size.Z), rampVis.CFrame * CFrame.new(0, 0.1, 0), Color3.fromRGB(245, 245, 240))
-	ribbon.Material = Enum.Material.SmoothPlastic
-	local stripe = part(bridge, "CableBridge_Stripe", Vector3.new(0.8, 0.55, rampVis.Size.Z), rampVis.CFrame * CFrame.new(0, 0.12, 0), Color3.fromRGB(70, 70, 75))
-	stripe.Material = Enum.Material.SmoothPlastic
-	cable(bridge, "CableBridge_Strand", loP + up * 0.6 + Vector3.new(0, 0, 2.2), hiP + up * 0.6 + Vector3.new(0, 0, 2.2), 0.7, Color3.fromRGB(230, 230, 225))
-	-- plug wedged at the top (counter edge) and the USB head at the bottom
-	part(bridge, "CableBridge_Plug", Vector3.new(3, 2, 2.4), CFrame.new(hiP + Vector3.new(0, 1, 0)), Color3.fromRGB(235, 235, 235))
-	part(bridge, "CableBridge_Prong1", Vector3.new(1.2, 0.3, 0.3), CFrame.new(hiP + Vector3.new(-2, 1.3, -0.6)), Color3.fromRGB(200, 170, 80), Enum.Material.Metal)
-	part(bridge, "CableBridge_Prong2", Vector3.new(1.2, 0.3, 0.3), CFrame.new(hiP + Vector3.new(-2, 1.3, 0.6)), Color3.fromRGB(200, 170, 80), Enum.Material.Metal)
-	part(bridge, "CableBridge_Usb", Vector3.new(2.2, 1, 1.6), CFrame.new(loP + Vector3.new(1.5, 0.5, 0)), Color3.fromRGB(60, 60, 65))
-	reveal(bridge, "CableBridge")
-
-	-- hang point: the cookbook stack top, at the low end of the (hidden) ramp
-	local hook = anchor(win, "HangCable", "HangCable", loP + Vector3.new(-3, 1.5, 0))
-	local peg = part(hook, "Hook", Vector3.new(1, 2.5, 1), CFrame.new(loP + Vector3.new(-3, 1.25, -4)), Color3.fromRGB(200, 160, 60), Enum.Material.Metal)
-	peg.CanCollide = false
-else
-	warn("[AddEscapeScenarios] Routes.Ramp2_Cookbooks_Collider/Visual not found — cable bridge skipped")
-end
-
 -- window latch on the inner face of the centre pane, bottom edge (sill top Y 61)
 local latch = anchor(win, "PryLatch", "PryLatch", Vector3.new(76, 63, 2.5))
 part(latch, "Latch", Vector3.new(4, 1.2, 0.8), CFrame.new(76, 62.4, -1.4), Color3.fromRGB(205, 175, 90), Enum.Material.Metal)
@@ -209,6 +170,151 @@ local latchOpen = part(win, "LatchOpen_Mark", Vector3.new(1.4, 0.6, 1.2), CFrame
 reveal(latchOpen, "LatchOpen")
 anchor(win, "PushWindow_A", "PushWindow", Vector3.new(56, 63, 3), "A")
 anchor(win, "PushWindow_B", "PushWindow", Vector3.new(80, 63, 3), "B")
+
+
+----------------------------------------------------------------------------
+-- Table start pads + cable routes (CableThrowService)
+----------------------------------------------------------------------------
+
+local TABLE_Y = 38.25
+local spawnsFolder = map:FindFirstChild("Spawns") or root
+for i, pos in { Vector3.new(48, TABLE_Y, 70), Vector3.new(48, TABLE_Y, 95), Vector3.new(68, TABLE_Y, 96), Vector3.new(94, TABLE_Y, 68) } do
+	local old = spawnsFolder:FindFirstChild(`Spawn_Table{i}`)
+	if old then
+		old:Destroy()
+	end
+	local pad = part(spawnsFolder, `Spawn_Table{i}`, Vector3.new(4, 0.2, 4), CFrame.new(pos + Vector3.new(0, 0.1, 0)), Color3.fromRGB(80, 200, 255))
+	invisible(pad)
+	pad:SetAttribute("EnabledBy", "TableStart")
+	pad:SetAttribute("Priority", 0)
+	CollectionService:AddTag(pad, "PlayerSpawn")
+end
+
+local cablesFolder = Instance.new("Folder")
+cablesFolder.Name = "CableRoutes"
+cablesFolder.Parent = root
+
+local CABLE_WHITE = Color3.fromRGB(242, 242, 236)
+local HOOK_GOLD = Color3.fromRGB(215, 170, 60)
+
+-- a small hook / ring art at `pos`
+local function hookArt(parent: Instance, pos: Vector3)
+	local base = part(parent, "HookBase", Vector3.new(2.4, 0.6, 2.4), CFrame.new(pos + Vector3.new(0, -0.2, 0)), Color3.fromRGB(90, 90, 96), Enum.Material.Metal)
+	base.CanQuery = false
+	local ring = part(parent, "HookRing", Vector3.new(0.5, 2.2, 2.2), CFrame.new(pos + Vector3.new(0, 1, 0)), HOOK_GOLD, Enum.Material.Metal)
+	ring.Shape = Enum.PartType.Cylinder
+	local glow = part(parent, "HookGlow", Vector3.new(0.3, 1.2, 1.2), CFrame.new(pos + Vector3.new(0, 1, 0)), Color3.fromRGB(255, 220, 120), Enum.Material.Neon)
+	glow.Shape = Enum.PartType.Cylinder
+	glow.Transparency = 0.3
+end
+
+type RouteDef = {
+	id: string,
+	kind: string, -- "Bridge" | "Climb"
+	spot: CFrame,
+	spotSize: Vector3,
+	hook: Vector3,
+	a: Vector3, -- bridge: low end on the plank top / climb: truss bottom
+	b: Vector3, -- bridge: high end / climb: truss top
+	visualFrom: Vector3,
+	visualTo: Vector3,
+	power: number,
+	window: number,
+	counter: boolean,
+}
+
+local ROUTES: { RouteDef } = {
+	{
+		id = "TN", kind = "Bridge", counter = true, power = 0.7, window = 0.09,
+		spot = CFrame.new(76, TABLE_Y + 3, 68), spotSize = Vector3.new(10, 6, 10),
+		hook = Vector3.new(76, 45.5, 29.5),
+		a = Vector3.new(76, TABLE_Y, 63), b = Vector3.new(76, 45, 29.5),
+		visualFrom = Vector3.new(76, TABLE_Y + 0.4, 63), visualTo = Vector3.new(76, 45.6, 29.5),
+	},
+	{
+		id = "TE", kind = "Bridge", counter = true, power = 0.7, window = 0.09,
+		spot = CFrame.new(92, TABLE_Y + 3, 82), spotSize = Vector3.new(10, 6, 10),
+		hook = Vector3.new(131.5, 45.5, 82),
+		a = Vector3.new(99, TABLE_Y, 82), b = Vector3.new(131.5, 45, 82),
+		visualFrom = Vector3.new(99, TABLE_Y + 0.4, 82), visualTo = Vector3.new(131.5, 45.6, 82),
+	},
+	{
+		id = "FC", kind = "Climb", counter = true, power = 0.82, window = 0.08,
+		spot = CFrame.new(62, 3, 38), spotSize = Vector3.new(7, 6, 9),
+		hook = Vector3.new(62, 45.5, 29.5),
+		a = Vector3.new(62, 0, 31), b = Vector3.new(62, 45, 31),
+		visualFrom = Vector3.new(62, 45.6, 29.8), visualTo = Vector3.new(62, 0.4, 31.3),
+	},
+	{
+		id = "TF", kind = "Climb", counter = false, power = 0.35, window = 0.1,
+		spot = CFrame.new(46, TABLE_Y + 3, 88), spotSize = Vector3.new(8, 6, 10),
+		hook = Vector3.new(37, 0.5, 90),
+		a = Vector3.new(40, 0, 88), b = Vector3.new(40, TABLE_Y, 88),
+		visualFrom = Vector3.new(40.6, TABLE_Y + 0.3, 88), visualTo = Vector3.new(37, 0.6, 90),
+	},
+}
+
+for _, r in ROUTES do
+	local m = Instance.new("Model")
+	m.Name = `Route_{r.id}`
+	m:SetAttribute("RouteId", r.id)
+	m:SetAttribute("RequiredPower", r.power)
+	m:SetAttribute("PowerWindow", r.window)
+	m:SetAttribute("ReachesCounter", r.counter)
+	m:SetAttribute("RouteKind", r.kind)
+	m:SetAttribute("Attached", false)
+	CollectionService:AddTag(m, "CableRoute")
+	m.Parent = cablesFolder
+
+	local spot = part(m, "ThrowSpot", r.spotSize, r.spot, Color3.fromRGB(80, 200, 255))
+	invisible(spot)
+	local hp = part(m, "HookPoint", Vector3.new(1, 1, 1), CFrame.new(r.hook), HOOK_GOLD)
+	invisible(hp)
+	m.PrimaryPart = hp
+
+	-- hook art (always visible: tells players where to cast) — anchor for the CableHook marker
+	local hookModel = Instance.new("Model")
+	hookModel.Name = "Hook"
+	hookModel.Parent = m
+	hookArt(hookModel, r.hook)
+	if r.counter then
+		local anc = anchor(m, `HookMarker_{r.id}`, "CableToCounter", r.hook + Vector3.new(0, 2, 0))
+		anc:SetAttribute("Part", r.id)
+	end
+
+	-- the cable that appears when hooked
+	local cableModel = Instance.new("Model")
+	cableModel.Name = "Cable"
+	cableModel.Parent = m
+	if r.kind == "Bridge" then
+		local dir = r.b - r.a
+		local len = dir.Magnitude
+		local cf = CFrame.lookAt((r.a + r.b) / 2, r.b) * CFrame.new(0, -0.5, 0)
+		local plank = part(cableModel, "Walk", Vector3.new(4, 1, len + 1), cf, CABLE_WHITE, nil, true)
+		plank.Transparency = 1
+		local ribbon = part(cableModel, "Ribbon", Vector3.new(3.2, 0.45, len), cf * CFrame.new(0, 0.3, 0), CABLE_WHITE)
+		ribbon.CanQuery = false
+		part(cableModel, "Stripe", Vector3.new(0.6, 0.5, len), cf * CFrame.new(0, 0.32, 0), Color3.fromRGB(70, 70, 76)).CanQuery = false
+		cable(cableModel, "Strand", r.visualFrom + Vector3.new(1.9, 0.2, 0), r.visualTo + Vector3.new(1.9, 0.2, 0), 0.5, CABLE_WHITE)
+	else
+		local truss = Instance.new("TrussPart")
+		truss.Name = "Climb"
+		truss.Anchored = true
+		truss.Size = Vector3.new(2, (r.b.Y - r.a.Y), 2)
+		truss.CFrame = CFrame.new((r.a + r.b) / 2)
+		truss.Transparency = 1
+		truss.Parent = cableModel
+		cable(cableModel, "Strand", r.visualFrom, r.visualTo, 0.7, CABLE_WHITE)
+		-- knots every few studs (grip look)
+		local steps = math.floor((r.visualFrom - r.visualTo).Magnitude / 5)
+		for k = 1, steps - 1 do
+			local p = r.visualFrom:Lerp(r.visualTo, k / steps)
+			part(cableModel, `Knot{k}`, Vector3.new(1.1, 1.1, 1.1), CFrame.new(p), CABLE_WHITE).Shape = Enum.PartType.Ball
+		end
+	end
+	part(cableModel, "Plug", Vector3.new(2.2, 1.6, 1.8), CFrame.new(r.hook + Vector3.new(0, 0.6, 0)), Color3.fromRGB(235, 235, 235))
+	reveal(cableModel, `Cable_{r.id}`)
+end
 
 ----------------------------------------------------------------------------
 -- Drain scenario

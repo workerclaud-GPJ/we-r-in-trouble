@@ -37,9 +37,9 @@ local STEP_HINT: { [string]: { text: string, sub: string } } = {
 		text = "Hint: Call for help",
 		sub = "Go up to the counter. Hold E at the radios together!",
 	},
-	["Build a cable bridge"] = {
-		text = "Hint: The cookbook ramp is gone!",
-		sub = "Find the charger cable and hang it from the cookbook stack to the counter",
+	["Cast the cable to the counter"] = {
+		text = "Hint: Cast the charger cable!",
+		sub = "Hold the cable, stand by a glowing hook spot, hold F (or CAST) and release in the green zone",
 	},
 	["Pry the window latch"] = {
 		text = "Hint: Pry the window latch",
@@ -73,6 +73,7 @@ local OBJECTIVE: { [string]: string } = {
 	DeliverBatteries = "Plug in batteries",
 	CallForHelp = "Shout into the radios",
 	["obj.hang_cable"] = "Hang the cable",
+	["obj.cable_counter"] = "Cast a cable to the counter",
 	["obj.pry_latch"] = "Pry the latch",
 	["obj.push_window"] = "Push the window",
 	["obj.pry_grate"] = "Pry the grate",

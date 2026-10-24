@@ -427,7 +427,8 @@ function ItemService.firstPickerOf(player: Player): Player?
 	return item and item.firstPicker
 end
 
-function ItemService.drop(player: Player)
+-- `at` (optional): put it there instead of in front of the player (cable cast that missed).
+function ItemService.drop(player: Player, at: Vector3?)
 	local item = carriedBy(player)
 	if not item then
 		return
@@ -440,7 +441,14 @@ function ItemService.drop(player: Player)
 	end
 	local params = raycastParams()
 	local down = Vector3.new(0, -20, 0)
-	local hit = Workspace:Raycast(origin + look, down, params) or Workspace:Raycast(origin, down, params)
+	local hit: RaycastResult?
+	if at then
+		origin = at
+		look = Vector3.zero
+		hit = Workspace:Raycast(at + Vector3.new(0, 4, 0), Vector3.new(0, -80, 0), params)
+	else
+		hit = Workspace:Raycast(origin + look, down, params) or Workspace:Raycast(origin, down, params)
+	end
 
 	if item.weld then
 		item.weld:Destroy()
@@ -737,9 +745,15 @@ function ItemService.start()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		lastDrop[player] = nil
 	end)
-	PlayerStateService.Downed:Connect(ItemService.drop)
-	PlayerStateService.Eliminated:Connect(ItemService.drop)
-	PlayerStateService.Left:Connect(ItemService.drop)
+	PlayerStateService.Downed:Connect(function(p: Player)
+		ItemService.drop(p)
+	end)
+	PlayerStateService.Eliminated:Connect(function(p: Player)
+		ItemService.drop(p)
+	end)
+	PlayerStateService.Left:Connect(function(p: Player)
+		ItemService.drop(p)
+	end)
 end
 
 return ItemService
