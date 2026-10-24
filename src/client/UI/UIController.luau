@@ -18,12 +18,14 @@ local StarterGui = game:GetService("StarterGui")
 local HudController = require(script.Parent.HudController)
 local BreathBar = require(script.Parent.Widgets.BreathBar)
 local DashButton = require(script.Parent.Widgets.DashButton)
+local DropButton = require(script.Parent.Widgets.DropButton)
 
 local UIController = {}
 
 local started = false
 local breathBar: BreathBar.BreathBar? = nil
 local dashButton: DashButton.DashButton? = nil
+local dropButton: DropButton.DropButton? = nil
 local hud: HudController.HudController? = nil
 
 local SETCORE_RETRIES = 20
@@ -58,6 +60,7 @@ function UIController.start()
 	local hudGui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("WRIT_Hud")
 	breathBar = if hudGui then BreathBar.new(hudGui) else nil
 	dashButton = if hudGui then DashButton.new(hudGui) else nil
+	dropButton = if hudGui then DropButton.new(hudGui) else nil
 end
 
 -- For tests / Studio hot reload only.
@@ -69,6 +72,10 @@ function UIController.stop()
 	if breathBar then
 		breathBar.destroy()
 		breathBar = nil
+	end
+	if dropButton then
+		dropButton.destroy()
+		dropButton = nil
 	end
 	if dashButton then
 		dashButton.destroy()

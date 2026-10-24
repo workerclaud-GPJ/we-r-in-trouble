@@ -3,7 +3,8 @@
 	ItemService — small items (batteries): random spawn (max 1 per Zone), pickup (press),
 	weld to RightHand, consume at socket, auto-drop on Downed/Eliminated/Left,
 	anchored floor-raycast placement, KillY recovery after 3s, Deliver count reduction.
-	GDD §3.4 Deliver, §5.7 (Deadline: no Drop button, no idle respawn).
+	GDD §3.4 Deliver, §5.7 (no idle respawn). Drop: G / Drop button (Remote DropItem);
+	pressing pickup on another item while holding swaps (held item is put down in front).
 
 	Features.ItemPhysics (default off = the behaviour above, unchanged):
 	  lying items (spawned / dropped) are unanchored, CanCollide, CustomPhysicalProperties from
@@ -25,6 +26,7 @@ local PhysicsService = game:GetService("PhysicsService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Contract = require(Shared.Contract)
 local Config = require(Shared.Config)
+local Remotes = require(Shared.Remotes)
 
 local MapService = require(script.Parent.MapService)
 local PlayerStateService = require(script.Parent.PlayerStateService)
@@ -344,13 +346,17 @@ onPickup = function(item: ItemRec, player: Player)
 	if not PlayerStateService.isStanding(player) or not PlayerStateService.isParticipant(player) then
 		return
 	end
-	if carriedBy(player) then
-		return
-	end
 	local char = player.Character
 	local hrp = PlayerStateService.getHRP(player)
 	if not (char and hrp) or (hrp.Position - item.handle.Position).Magnitude > I.INTERACT_SERVER_RANGE then
 		return
+	end
+	if carriedBy(player) then
+		-- swap: put the held item down in front, then take this one
+		ItemService.drop(player)
+		if carriedBy(player) or item.carrier or not table.find(items, item) then
+			return
+		end
 	end
 	-- Art contract: UpperTorso.CarryAttachment (chest hug); fallback RightHand, then HRP
 	local carryAttachment = char:FindFirstChild("CarryAttachment", true)
@@ -716,6 +722,21 @@ function ItemService.start()
 		PhysicsService:CollisionGroupSetCollidable(ITEMS_GROUP, Contract.CollisionGroup.Players, false)
 		DisasterService.Shake:Connect(onShake)
 	end
+	-- Drop button / G key (DropController): only a standing participant holding an item
+	local lastDrop: { [Player]: number } = {}
+	Remotes.get("DropItem").OnServerEvent:Connect(function(player: Player)
+		local t = os.clock()
+		if t - (lastDrop[player] or 0) < 0.3 then
+			return
+		end
+		lastDrop[player] = t
+		if PlayerStateService.isStanding(player) and PlayerStateService.isParticipant(player) then
+			ItemService.drop(player)
+		end
+	end)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		lastDrop[player] = nil
+	end)
 	PlayerStateService.Downed:Connect(ItemService.drop)
 	PlayerStateService.Eliminated:Connect(ItemService.drop)
 	PlayerStateService.Left:Connect(ItemService.drop)

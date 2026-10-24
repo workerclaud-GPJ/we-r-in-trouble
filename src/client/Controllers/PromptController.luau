@@ -3,7 +3,7 @@
 	PromptController — local-only prompt visibility (docs/ARCHITECTURE.md §6).
 	The server owns prompt.Enabled; the client hides a prompt by setting its local
 	MaxActivationDistance to 0 and restores the server value otherwise.
-	Hidden: own RevivePrompt · PickupPrompt while holding · Deliver socket while not holding ·
+	Hidden: own RevivePrompt · Deliver socket while not holding (PickupPrompt reads "Swap" while holding) ·
 	every prompt while not Standing · a toggle-hold prompt whose stand slots are all taken
 	(attr SlotsFull, e.g. wheel full) unless you are one of its runners (you need it to Stop).
 	The server re-validates everything.
@@ -46,7 +46,17 @@ local function visible(prompt: ProximityPrompt): boolean
 		local char = player.Character
 		return not (char and prompt:IsDescendantOf(char))
 	elseif prompt.Name == Contract.Name.PickupPrompt then
-		return not isHolding
+		-- while holding: shown as "Swap" (server puts the held item down, takes this one)
+		local base = prompt:GetAttribute("BaseActionText")
+		if base == nil then
+			prompt:SetAttribute("BaseActionText", prompt.ActionText)
+			base = prompt.ActionText
+		end
+		local text = if isHolding then "Swap" else tostring(base)
+		if prompt.ActionText ~= text then
+			prompt.ActionText = text
+		end
+		return true
 	elseif kindOf(prompt) == "Deliver" then
 		return isHolding
 	elseif prompt:GetAttribute(Attr.SlotsFull) == true then
