@@ -44,6 +44,8 @@ local forceStartRequested = false
 local forcedResult: Result? = nil
 local lastDisasterId: string? = nil
 local nextDisasterId: string? = nil -- debug override for the next match (setDisaster)
+local lastScenarioId: string? = nil
+local nextScenarioId: string? = nil -- debug override for the next match (scenario)
 local matchRunning = false
 local matchScope: Cleanup.Cleanup? = nil
 local rng = Random.new()
@@ -234,8 +236,54 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 	end
 end
 
+-- Features.NewMission: one escape scenario per match, equal odds, never the same twice in a row.
+local function pickMission(): Types.MissionDef?
+	if not Config.Features.NewMission then
+		return Config.Missions[R.MISSION_ID]
+	end
+	if not Config.Features.CapabilitySpawn then
+		-- scenarios place their items with LootService; without it only the capability mission is safe
+		return Config.Missions[R.NEW_MISSION_ID]
+	end
+	local forced = nextScenarioId and Config.Missions[nextScenarioId]
+	nextScenarioId = nil
+	if forced then
+		lastScenarioId = forced.id
+		return forced
+	end
+	local pool: { string } = {}
+	for _, id in R.SCENARIO_IDS do
+		if Config.Missions[id] and (id ~= lastScenarioId or #R.SCENARIO_IDS == 1) then
+			table.insert(pool, id)
+		end
+	end
+	if #pool == 0 then
+		return Config.Missions[R.NEW_MISSION_ID]
+	end
+	local id = pool[rng:NextInteger(1, #pool)]
+	lastScenarioId = id
+	return Config.Missions[id]
+end
+
+-- Escape scenario map setup (after loadMap, before loot/mission).
+local function applyScenario(mission: Types.MissionDef, map: Model)
+	MapService.hideParts(mission.hideParts)
+	MapService.keepExitZones(mission.exitId)
+	local camName = mission.winCamera
+	if camName then
+		local cam = map:FindFirstChild(camName, true)
+		local point = map:FindFirstChild(Contract.Name.WinCameraPoint, true)
+		if cam and cam:IsA("BasePart") and point and point:IsA("BasePart") then
+			point.CFrame = cam.CFrame
+		end
+	end
+	RoundState.set(Attr.ExitKind, mission.exitKind)
+	RoundState.set(Attr.ScenarioId, mission.id)
+	print(`[Round] scenario {mission.id} (exit {mission.exitKind or "Carrier"})`)
+end
+
 local function runMatch(candidates: { Player })
-	local mission = Config.Missions[if Config.Features.NewMission then R.NEW_MISSION_ID else R.MISSION_ID]
+	local mission = pickMission()
 	local disaster = mission and pickDisaster(mission)
 	if not (mission and disaster) then
 		warn("[Round] mission/disaster config missing")
@@ -247,6 +295,7 @@ local function runMatch(candidates: { Player })
 		task.wait(5)
 		return
 	end
+	applyScenario(mission, map)
 
 	local participants: { Player } = {}
 	for _, p in candidates do
@@ -317,7 +366,7 @@ local function runMatch(candidates: { Player })
 		PlayerStateService.setEscaped(p)
 	end
 	RoundState.set(Attr.ResultWin, result.win)
-	RoundState.set(Attr.ResultReason, result.reason)
+	RoundState.set(Attr.ResultReason, if result.win and mission.exitKind then `Escaped{mission.exitKind}` else result.reason)
 	RoundState.set(Attr.ResultTime, math.floor(math.min(now() - startedAt, R.MATCH_HARD_LIMIT)))
 	RoundState.set(Attr.ResultDisaster, (DisasterService.current() or disaster).displayName)
 	RoundState.set(Attr.ResultEscaped, displayNames(result.escaped))
@@ -347,6 +396,27 @@ end
 -- Debug: force the disaster of the next match (nil = random again).
 function RoundService.setNextDisaster(id: string?)
 	nextDisasterId = id
+end
+
+-- Debug: force the escape scenario of the next match (Features.NewMission). Accepts a mission
+-- id, a 1-based index into Config.Round.SCENARIO_IDS, or a unique part of an id ("drain").
+function RoundService.setNextScenario(key: string): string?
+	local n = tonumber(key)
+	if n and R.SCENARIO_IDS[n] then
+		nextScenarioId = R.SCENARIO_IDS[n]
+		return nextScenarioId
+	end
+	local found: string? = nil
+	for _, id in R.SCENARIO_IDS do
+		if string.lower(id) == string.lower(key) then
+			found = id
+			break
+		elseif string.find(string.lower(id), string.lower(key), 1, true) then
+			found = id
+		end
+	end
+	nextScenarioId = found
+	return found
 end
 
 -- Debug: skip the intermission wait (needs >= 1 ready player).

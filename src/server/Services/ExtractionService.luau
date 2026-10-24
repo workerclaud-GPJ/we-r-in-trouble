@@ -106,7 +106,7 @@ local function spawnCarrier(assetName: string?): Instance?
 	return carrier
 end
 
-local function onArrived()
+local function onArrived(direct: boolean)
 	arrived = true
 	arrivedAt = now()
 	for _, zone in MapService.exitZones() do
@@ -114,8 +114,15 @@ local function onArrived()
 	end
 	RoundState.set(Attr.CarrierArrived, true)
 	RoundState.set(Attr.CarrierArrivedAt, arrivedAt)
-	Hud.banner("BannerCarrier", "The rescue carrier is here!", "Everyone get inside!", "Good", 3)
+	if not direct then
+		Hud.banner("BannerCarrier", "The rescue carrier is here!", "Everyone get inside!", "Good", 3)
+	end
 end
+
+local DIRECT_BANNER: { [string]: { string } } = {
+	Window = { "BannerWindowEscape", "The window is open!", "Jump out of the window!" },
+	Drain = { "BannerDrainEscape", "The drain is open!", "Climb down the cable into the drain!" },
+}
 
 -- Exit unlocked (final step complete).
 function ExtractionService.begin(def: Types.MissionDef)
@@ -128,6 +135,15 @@ function ExtractionService.begin(def: Types.MissionDef)
 	scope = s
 	MapService.setFlag(def.exitFlag)
 	unlockDoors(def.exitFlag)
+	if def.exitKind then
+		-- escape scenario: no carrier, the exit zone opens right away (Departure as usual)
+		RoundState.set(Attr.ExitOpen, true)
+		RoundState.set(Attr.CarrierArrivesAt, nil)
+		local b = DIRECT_BANNER[def.exitKind] or DIRECT_BANNER.Window
+		Hud.banner(b[1], b[2], b[3], "Good", 3)
+		onArrived(true)
+		return
+	end
 	local eta = now() + def.exitArrivalDelay
 	RoundState.set(Attr.ExitOpen, true)
 	RoundState.set(Attr.CarrierArrivesAt, eta)
@@ -135,7 +151,7 @@ function ExtractionService.begin(def: Types.MissionDef)
 
 	s:add(task.delay(def.exitArrivalDelay, function()
 		spawnCarrier(def.exitVehicleAsset)
-		s:add(task.delay(X.CARRIER_DESCEND_TIME, onArrived))
+		s:add(task.delay(X.CARRIER_DESCEND_TIME, onArrived, false))
 	end))
 end
 

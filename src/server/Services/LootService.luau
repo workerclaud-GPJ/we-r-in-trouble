@@ -35,7 +35,7 @@ local OWNER = "Loot"
 local MAX_SEED = 2 ^ 31 - 1
 
 export type Requirement = { capability: string?, itemType: string?, need: number, label: string }
-export type Point = { name: string, zone: string, size: string, fallback: boolean, part: BasePart? }
+export type Point = { name: string, zone: string, size: string, fallback: boolean, scenarioOnly: boolean, part: BasePart? }
 export type Pick = { itemType: string, point: Point, forced: boolean }
 export type Selection = { picks: { Pick }, unmetBeforeForce: { string }, unmet: { string } }
 
@@ -263,6 +263,7 @@ local function toPoint(part: BasePart): Point
 		zone = if typeof(zone) == "string" and zone ~= "" then zone else part:GetFullName(),
 		size = if size == "Medium" then "Medium" else "Small",
 		fallback = part:GetAttribute(Attr.Fallback) == true,
+		scenarioOnly = part:GetAttribute(Attr.ScenarioOnly) == true,
 		part = part,
 	}
 end
@@ -310,6 +311,58 @@ local function currentMission(): Types.MissionDef?
 	return Config.Missions[id]
 end
 
+
+-- Escape scenarios: MissionDef.fixedLoot goes on its named ScenarioOnly points first; the
+-- requirements it covers are dropped and the random loot uses the remaining budget on the
+-- normal (non-ScenarioOnly) points. Same seed -> same result (pure, like select()).
+function LootService.plan(seed: number, mission: Types.MissionDef, loot: Types.LootTableDef, points: { Point }): Selection
+	local fixed: { Pick } = {}
+	local missing: { string } = {}
+	for _, f in mission.fixedLoot or {} do
+		local point: Point? = nil
+		for _, p in points do
+			if p.scenarioOnly and (p.name == f.spawn or string.sub(p.name, -(#f.spawn + 1)) == "." .. f.spawn) then
+				point = p
+				break
+			end
+		end
+		if point and Config.Items[f.itemType] then
+			table.insert(fixed, { itemType = f.itemType, point = point, forced = false })
+		else
+			table.insert(missing, `{f.itemType}@{f.spawn}`)
+		end
+	end
+	local reqs: { Requirement } = {}
+	for _, req in LootService.requirements(mission) do
+		local have = 0
+		for _, pick in fixed do
+			if matches(req, pick.itemType) then
+				have += 1
+			end
+		end
+		if have < req.need then
+			table.insert(reqs, { capability = req.capability, itemType = req.itemType, need = req.need - have, label = req.label })
+		end
+	end
+	local open: { Point } = {}
+	for _, p in points do
+		if not p.scenarioOnly then
+			table.insert(open, p)
+		end
+	end
+	local budget = math.max(0, loot.budget - #fixed)
+	local rest = LootService.select(seed, { budget = budget, entries = loot.entries }, reqs, open)
+	local picks = table.clone(fixed)
+	for _, pick in rest.picks do
+		table.insert(picks, pick)
+	end
+	local unmet = table.clone(rest.unmet)
+	for _, m in missing do
+		table.insert(unmet, `fixed {m} (no ScenarioOnly ItemSpawn)`)
+	end
+	return { picks = picks, unmetBeforeForce = rest.unmetBeforeForce, unmet = unmet }
+end
+
 ----------------------------------------------------------------------------
 -- Spawning
 ----------------------------------------------------------------------------
@@ -324,7 +377,7 @@ local function spawnWithSeed(mission: Types.MissionDef, seed: number): number
 	lastSeed = seed
 	print(`[Loot] seed={seed}`)
 	local reqs = LootService.requirements(mission)
-	local result = LootService.select(seed, loot, reqs, livePoints())
+	local result = LootService.plan(seed, mission, loot, livePoints())
 	local isOpen = function(): boolean
 		return PlayerStateService.isMatchActive()
 	end
@@ -366,8 +419,8 @@ function LootService.reroll(seed: number): string
 end
 
 -- Debug: run select() for seeds 1..n (no instances). Returns a summary line.
-function LootService.check(n: number): string
-	local mission = currentMission()
+function LootService.check(n: number, missionOverride: Types.MissionDef?): string
+	local mission = missionOverride or currentMission()
 	if not mission then
 		return "no mission"
 	end
@@ -379,7 +432,7 @@ function LootService.check(n: number): string
 	local reqs = LootService.requirements(mission)
 	local failed, forcedSeeds = 0, 0
 	for seed = 1, math.clamp(math.floor(n), 1, 10000) do
-		local result = LootService.select(seed, loot, reqs, points)
+		local result = LootService.plan(seed, mission, loot, points)
 		if #result.unmet > 0 then
 			failed += 1
 			warn(`[Loot] lootcheck seed={seed} FAILED: {table.concat(result.unmet, ", ")}`)

@@ -17,6 +17,8 @@ local STAGE: { [string]: string } = {
 
 local REASON: { [string]: string } = {
 	Escaped = "The rescue carrier got you out!",
+	EscapedWindow = "You jumped out of the window!",
+	EscapedDrain = "You escaped through the drain!",
 	Collapse = "Time ran out. The kitchen collapsed!",
 	Wipe = "Everyone got dizzy at the same time.",
 	NoPlayers = "Not enough hamsters left.",
@@ -35,6 +37,30 @@ local STEP_HINT: { [string]: { text: string, sub: string } } = {
 		text = "Hint: Call for help",
 		sub = "Go up to the counter. Hold E at the radios together!",
 	},
+	["Build a cable bridge"] = {
+		text = "Hint: The cookbook ramp is gone!",
+		sub = "Find the charger cable and hang it from the cookbook stack to the counter",
+	},
+	["Pry the window latch"] = {
+		text = "Hint: Pry the window latch",
+		sub = "Find the scissors on the counter and pry the latch on the window sill",
+	},
+	["Push the window open"] = {
+		text = "Hint: Push together!",
+		sub = "Hold E at both sides of the window",
+	},
+	["Pry the drain grate"] = {
+		text = "Hint: There's a drain under the step chair",
+		sub = "Find the scissors and pry the grate loose",
+	},
+	["Lift the grate together"] = {
+		text = "Hint: Lift together!",
+		sub = "Hold E at both sides of the grate",
+	},
+	["Tie the cable to the drain"] = {
+		text = "Hint: Tie the cable",
+		sub = "Bring the charger cable and tie it to the drain to climb down",
+	},
 }
 
 -- Objective display names. Server may send a string key (ObjectiveDef.displayName,
@@ -46,6 +72,12 @@ local OBJECTIVE: { [string]: string } = {
 	RunWheel = "Run the wheel",
 	DeliverBatteries = "Plug in batteries",
 	CallForHelp = "Shout into the radios",
+	["obj.hang_cable"] = "Hang the cable",
+	["obj.pry_latch"] = "Pry the latch",
+	["obj.push_window"] = "Push the window",
+	["obj.pry_grate"] = "Pry the grate",
+	["obj.lift_grate"] = "Lift the grate",
+	["obj.tie_cable"] = "Tie the cable",
 }
 
 Strings.Text = table.freeze({
@@ -95,6 +127,7 @@ Strings.Text = table.freeze({
 	RescueIn = "Rescue in {t}",
 	RescueInSub = "Hold on! Stay near the window",
 	CarrierHere = "Get in the carrier!",
+	ExitHere = "Get out now!",
 	InsideCount = "{n}/{need} inside",
 	Paused = "Wait! Everyone back in!",
 	PausedSub = "Leaving in {t}  ·  {n}/{need} inside",
@@ -115,6 +148,10 @@ Strings.Text = table.freeze({
 	BannerStepComplete = "Step complete!",
 	BannerWindowOpen = "The window is open!",
 	BannerWindowOpenSub = "Rescue is coming. Get to the exit!",
+	BannerWindowEscape = "The window is open!",
+	BannerWindowEscapeSub = "Jump out of the window!",
+	BannerDrainEscape = "The drain is open!",
+	BannerDrainEscapeSub = "Climb down the cable into the drain!",
 	BannerCarrier = "The rescue carrier is here!",
 	BannerCarrierSub = "Everyone get inside!",
 	BannerCritical = "It's getting worse!",

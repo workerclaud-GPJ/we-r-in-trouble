@@ -226,10 +226,14 @@ function HudController.new(): HudController
 		end
 
 		if snap.exitOpen and not p.exitOpen then
+			local kind = snap.exitKind
 			banner.pushUrgent({
 				key = "BannerWindowOpen",
-				text = T.BannerWindowOpen,
-				sub = T.BannerWindowOpenSub,
+				text = if kind == "Drain" then T.BannerDrainEscape elseif kind == "Window" then T.BannerWindowEscape else T.BannerWindowOpen,
+				sub = if kind == "Drain"
+					then T.BannerDrainEscapeSub
+					elseif kind == "Window" then T.BannerWindowEscapeSub
+					else T.BannerWindowOpenSub,
 				color = Style.Color.Exit,
 				duration = Style.Tuning.BriefingTime,
 			})
@@ -241,7 +245,7 @@ function HudController.new(): HudController
 		if snap.stage == "Critical" and p.stage ~= "Critical" and not snap.exitOpen and p.inMatch then
 			banner.push({ key = "BannerCritical", text = T.BannerCritical, sub = T.BannerCriticalSub, color = Style.Color.Bad })
 		end
-		if snap.carrierArrived and not p.carrierArrived then
+		if snap.carrierArrived and not p.carrierArrived and snap.exitKind == nil then
 			banner.pushUrgent({ key = "BannerCarrier", text = T.BannerCarrier, sub = T.BannerCarrierSub, color = Style.Color.Exit })
 		end
 		if snap.lastCall and not p.lastCall then

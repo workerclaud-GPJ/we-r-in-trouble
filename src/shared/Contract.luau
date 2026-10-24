@@ -35,6 +35,7 @@ Contract.Tag = table.freeze({
 	EventLane = "EventLane", -- Part, attr EventId: lane band for IceLane events (LookVector = slide dir)
 	RisingVolume = "RisingVolume", -- runtime: the volume (water) Part in Map.Runtime (server creates)
 	RouteTopple = "RouteTopple", -- Model (PrimaryPart + FallenPose): server topples it into a new walkable route
+	FlagReveal = "FlagReveal", -- Part/Model hidden at map load; shown when MapService.setFlag(attr RevealedBy)
 })
 
 Contract.Name = table.freeze({
@@ -81,6 +82,8 @@ Contract.Attr = table.freeze({
 	StepOpenedAt = "StepOpenedAt",
 	LastChance = "LastChance",
 	ExitOpen = "ExitOpen",
+	ExitKind = "ExitKind", -- RoundState: nil = rescue carrier, "Window" | "Drain" = direct exit (escape scenarios)
+	ScenarioId = "ScenarioId", -- RoundState: mission id of the running escape scenario
 	CarrierArrivesAt = "CarrierArrivesAt",
 	CarrierArrived = "CarrierArrived",
 	CarrierArrivedAt = "CarrierArrivedAt",
@@ -151,6 +154,9 @@ Contract.Attr = table.freeze({
 	Fallback = "Fallback", -- ItemSpawn: true = guaranteed point for CapabilitySpawn force-spawns
 	UnlockedBy = "UnlockedBy",
 	KillY = "KillY",
+	RevealedBy = "RevealedBy", -- FlagReveal: flag that shows it
+	ScenarioOnly = "ScenarioOnly", -- ItemSpawn: only MissionDef.fixedLoot uses it (never random loot)
+	ExitId = "ExitId", -- ExitZone: which exit it belongs to (nil = "Window")
 	-- Map markup (server sets)
 	Open = "Open",
 	Unlocked = "Unlocked",

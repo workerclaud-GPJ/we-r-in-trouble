@@ -187,7 +187,25 @@ function DebugCommands.run(text: string, caller: Player?): string
 		print(`[Debug] {status}`)
 		return status
 	elseif cmd == "lootcheck" then
+		if a2 then
+			-- lootCheck <n> all: every escape scenario
+			local lines: { string } = {}
+			for _, id in Config.Round.SCENARIO_IDS do
+				local m = Config.Missions[id]
+				if m and (string.lower(a2) == "all" or string.find(string.lower(id), string.lower(a2), 1, true)) then
+					table.insert(lines, LootService.check(tonumber(a1) or 100, m))
+				end
+			end
+			return table.concat(lines, "\n")
+		end
 		return LootService.check(tonumber(a1) or 100)
+	elseif cmd == "scenario" then
+		local id = a1 and RoundService.setNextScenario(a1)
+		if not id then
+			return "usage: scenario <1|2|3|id part> (next match; Features.NewMission)"
+		end
+		print(`[Debug] next scenario {id}`)
+		return `next scenario {id}`
 	else
 		return "unknown command"
 	end

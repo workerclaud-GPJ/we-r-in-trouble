@@ -121,7 +121,7 @@ function ExtractionPanel.new(parent: Instance): ExtractionPanel
 			barHolder.Visible = true
 			bar.set(1 - snap.departureRemaining / departTotal, Style.Color.Warn)
 		else
-			title.Text = T.CarrierHere
+			title.Text = if snap.exitKind then T.ExitHere else T.CarrierHere
 			title.TextColor3 = Style.Color.Exit
 			sub.Text = insideText(snap)
 			barHolder.Visible = false
