@@ -69,6 +69,21 @@ function Common.ensurePrompt(anchor: Model, actionText: string, objectText: stri
 	return prompt, part
 end
 
+-- Hold-animation slots: Attachments named StandPoint1, StandPoint2, ... anywhere in the
+-- anchor, sorted by name. WorldCFrame = where the holder's HumanoidRootPart is pinned.
+function Common.standPoints(anchor: Model): { Attachment }
+	local out: { Attachment } = {}
+	for _, d in anchor:GetDescendants() do
+		if d:IsA("Attachment") and string.match(d.Name, "^StandPoint%d+$") then
+			table.insert(out, d)
+		end
+	end
+	table.sort(out, function(a: Attachment, b: Attachment): boolean
+		return a.Name < b.Name
+	end)
+	return out
+end
+
 -- Server-side checks shared by every press/hold (GDD 5.6).
 function Common.canInteract(player: Player, part: BasePart): boolean
 	if not PlayerStateService.isParticipant(player) or not PlayerStateService.isStanding(player) then

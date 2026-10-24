@@ -33,6 +33,8 @@ local dropCFrame = CFrame.identity
 local dropSize = Vector3.zero
 local dropFloorY = 0
 local lobbySpawns: { BasePart } = {}
+-- Optional hazard check for spawn pads (RisingVolume sets it): true = skip this pad.
+local spawnFilter: ((padTop: Vector3) -> boolean)? = nil
 
 local rng = Random.new()
 
@@ -132,6 +134,7 @@ function MapService.unloadMap()
 	end
 	mapFolder, mapModel, runtime = nil, nil, nil
 	table.clear(flags)
+	spawnFilter = nil
 	noImpactParts, exitZones, safeSpawns = {}, {}, {}
 end
 
@@ -222,11 +225,30 @@ local function priorityOf(part: BasePart): number
 	return if typeof(p) == "number" then p else math.huge
 end
 
--- Lowest Priority among enabled spawns (Deadline: no hazard check).
+-- Hazard check for respawn/match spawns (GDD §5.4). nil clears it.
+function MapService.setSpawnFilter(fn: ((padTop: Vector3) -> boolean)?)
+	spawnFilter = fn
+end
+
+local function safeSpawnsOf(list: { BasePart }): { BasePart }
+	local filter = spawnFilter
+	if not filter then
+		return list
+	end
+	local out: { BasePart } = {}
+	for _, part in list do
+		if not filter(part.Position + Vector3.new(0, part.Size.Y / 2, 0)) then
+			table.insert(out, part)
+		end
+	end
+	return if #out > 0 then out else list -- every pad hazardous: still spawn somewhere
+end
+
+-- Lowest Priority among enabled spawns that pass the hazard filter (if any).
 local function bestSpawns(): { BasePart }
 	local best: { BasePart } = {}
 	local bestPriority = math.huge
-	for _, part in enabledSpawns() do
+	for _, part in safeSpawnsOf(enabledSpawns()) do
 		local p = priorityOf(part)
 		if p < bestPriority then
 			bestPriority = p

@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 local CameraController = require(script.Parent.CameraController)
 local HudRoot = require(script.Parent.HudRoot)
 local HudToggle = require(script.Parent.HudToggle)
+local IntroCinematic = require(script.Parent.IntroCinematic)
 local MarkerController = require(script.Parent.MarkerController)
 local StateAdapter = require(script.Parent.StateAdapter)
 local Strings = require(script.Parent.Strings)
@@ -27,6 +28,7 @@ local UIUtil = require(script.Parent.UIUtil)
 
 local Widgets = script.Parent.Widgets
 local Banner = require(Widgets.Banner)
+local CosmeticsPanel = require(Widgets.CosmeticsPanel)
 local ExtractionPanel = require(Widgets.ExtractionPanel)
 local HealthBar = require(Widgets.HealthBar)
 local LobbyStatus = require(Widgets.LobbyStatus)
@@ -62,6 +64,7 @@ function HudController.new(): HudController
 	local toggle = HudToggle.new(root.top)
 	local markers = MarkerController.new()
 	local camera = CameraController.new()
+	local intro = IntroCinematic.new(toggle.isVisible)
 
 	local topColumn: Frame = UIUtil.make("Frame", {
 		Name = "TopCenter",
@@ -85,6 +88,7 @@ function HudController.new(): HudController
 	local status = StatusOverlay.new(root.back, root.hud)
 	local result = ResultScreen.new(root.back, root.hud)
 	local banner = Banner.new(root.hud)
+	local cosmetics = CosmeticsPanel.new(root.hud)
 
 	-- Visibility = player toggle AND not during the win camera shot.
 	local cinematicHidden = false
@@ -97,8 +101,9 @@ function HudController.new(): HudController
 		applyVisibility()
 	end)
 
-	-- Optional server banner remote.
-	local stopRemote = StateAdapter.onBanner(function(payload: StateAdapter.BannerPayload)
+	-- Optional server banner remote. Held back while the match intro plays (HUD hidden).
+	local heldBanners: { StateAdapter.BannerPayload } = {}
+	local function showRemoteBanner(payload: StateAdapter.BannerPayload)
 		local color: Color3? = nil
 		if payload.color then
 			color = (Style.Color :: any)[payload.color]
@@ -118,6 +123,13 @@ function HudController.new(): HudController
 			color = color,
 			duration = payload.duration,
 		})
+	end
+	local stopRemote = StateAdapter.onBanner(function(payload: StateAdapter.BannerPayload)
+		if intro.isPlaying() then
+			table.insert(heldBanners, payload)
+		else
+			showRemoteBanner(payload)
+		end
 	end)
 
 	----------------------------------------------------------------------
@@ -130,6 +142,28 @@ function HudController.new(): HudController
 	local function stepSub(snap: Snapshot): string
 		local header = UIUtil.format(T.StepHeader, { i = snap.stepIndex, n = math.max(snap.stepCount, 1) })
 		return if snap.stepName then header .. ": " .. Strings.objective(snap.stepName) else header
+	end
+
+	-- Step hint: requested on match start / step change, pushed once StepName has
+	-- replicated (or after 2 s with the generic hint).
+	local hintPendingSince: number? = nil
+	local function pushStepHint(_snap: Snapshot)
+		hintPendingSince = os.clock()
+	end
+	local function flushStepHint(snap: Snapshot)
+		local since = hintPendingSince
+		if not since or (snap.stepName == nil and os.clock() - since < 2) then
+			return
+		end
+		hintPendingSince = nil
+		local text, sub = Strings.stepHint(snap.stepName)
+		banner.push({
+			key = "StepHint" .. snap.stepIndex,
+			text = text,
+			sub = sub,
+			color = Style.Color.Accent,
+			duration = Style.Tuning.HintTime,
+		})
 	end
 
 	local function deriveBanners(snap: Snapshot)
@@ -153,6 +187,7 @@ function HudController.new(): HudController
 			end
 			disasterBannerShown = false
 			warningSeenAt = nil
+			hintPendingSince = nil
 			return
 		end
 		if prev == nil then
@@ -171,6 +206,7 @@ function HudController.new(): HudController
 				color = Style.Color.Accent,
 				duration = StateAdapter.Tuning.briefingTime,
 			})
+			pushStepHint(snap) -- queued: shows right after the briefing, inside the first 10 s
 		end
 
 		local pastCalm = (STAGE_ORDER[snap.stage] or 1) >= STAGE_ORDER.Warning
@@ -199,6 +235,7 @@ function HudController.new(): HudController
 			})
 		elseif snap.stepIndex > p.stepIndex and p.inMatch and not snap.exitOpen then
 			banner.push({ key = "BannerStepComplete", text = T.BannerStepComplete, sub = stepSub(snap), color = Style.Color.Good })
+			pushStepHint(snap)
 		end
 
 		if snap.stage == "Critical" and p.stage ~= "Critical" and not snap.exitOpen and p.inMatch then
@@ -213,6 +250,10 @@ function HudController.new(): HudController
 		if lastChance and not p.lastChance then
 			banner.push({ key = "BannerLastChance", text = T.BannerLastChance, sub = T.BannerLastChanceSub, color = Style.Color.Bad })
 		end
+		if snap.exitOpen then
+			hintPendingSince = nil
+		end
+		flushStepHint(snap)
 	end
 
 	----------------------------------------------------------------------
@@ -221,11 +262,20 @@ function HudController.new(): HudController
 	local function refresh()
 		local snap = StateAdapter.snapshot()
 
+		intro.update(snap)
 		camera.update(snap)
 		local cinematic = camera.isCinematicPlaying()
-		if cinematic ~= cinematicHidden then
-			cinematicHidden = cinematic
+		local introPlaying = intro.isPlaying()
+		if (cinematic or introPlaying) ~= cinematicHidden then
+			cinematicHidden = cinematic or introPlaying
 			applyVisibility()
+		end
+		if not introPlaying and #heldBanners > 0 then
+			local held = heldBanners
+			heldBanners = {}
+			for _, payload in held do
+				showRemoteBanner(payload)
+			end
 		end
 
 		stageTimer.update(snap)
@@ -235,7 +285,10 @@ function HudController.new(): HudController
 		health.update(snap)
 		status.update(snap)
 		result.update(snap, cinematic)
-		deriveBanners(snap)
+		cosmetics.update(snap)
+		if not introPlaying then
+			deriveBanners(snap) -- deferred during the intro: Briefing + hint show right after it
+		end
 
 		markers.setScale(root.getScale())
 		markers.update(snap)
@@ -264,6 +317,8 @@ function HudController.new(): HudController
 			toggleConn:Disconnect()
 			stopRemote()
 			camera.destroy()
+			intro.destroy()
+			cosmetics.destroy()
 			markers.destroy()
 			toggle.destroy()
 			root.destroy()

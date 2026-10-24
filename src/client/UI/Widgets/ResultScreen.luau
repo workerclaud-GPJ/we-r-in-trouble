@@ -61,7 +61,7 @@ function ResultScreen.new(backParent: Instance, hudParent: Instance): ResultScre
 
 	local title = line("Title", 1, Style.Text.Huge)
 	title.Font = Style.Font.Display
-	local reason = line("Reason", 2, Style.Text.Body)
+	local reason = line("Reason", 2, Style.Text.Large)
 	UIUtil.make("Frame", {
 		Name = "Divider",
 		LayoutOrder = 3,
@@ -79,7 +79,8 @@ function ResultScreen.new(backParent: Instance, hudParent: Instance): ResultScre
 	local shown = false
 
 	local function update(snap: Snapshot, holdBack: boolean)
-		local show = snap.phase == "Result" and not holdBack
+		-- only for match participants: players waiting in the lobby keep the lobby card (review m8)
+		local show = snap.phase == "Result" and not holdBack and snap.state ~= StateAdapter.VALUES.StateLobby
 		dim.Visible = show
 		root.Visible = show
 		if not show then

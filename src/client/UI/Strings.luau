@@ -24,6 +24,19 @@ local REASON: { [string]: string } = {
 	Debug = "Match ended by a test command.",
 }
 
+-- Step hint banners (first seconds of each step). Keyed by step display name
+-- (RoundState StepName); unknown steps use Text.HintFallback.
+local STEP_HINT: { [string]: { text: string, sub: string } } = {
+	["Power up the charger"] = {
+		text = "Hint: Power up the charger",
+		sub = "Run in the wheel and carry batteries to the charger (press E / tap)",
+	},
+	["Call for help"] = {
+		text = "Hint: Call for help",
+		sub = "Go up to the counter. Hold E at the radios together!",
+	},
+}
+
 -- Objective display names. Server may send a string key (ObjectiveDef.displayName,
 -- e.g. "obj.run_wheel"), a plain objective id, or already-final text.
 local OBJECTIVE: { [string]: string } = {
@@ -37,6 +50,10 @@ local OBJECTIVE: { [string]: string } = {
 
 Strings.Text = table.freeze({
 	-- Lobby
+	GameTitle = "We R in Trouble",
+	HowToPlayTh = "ช่วยกันทำภารกิจ แล้วหนีออกทางหน้าต่าง!",
+	HowToPlay = "Work together, then escape through the window!",
+	PlayerRange = "Needs 2–4 players",
 	WaitingForPlayers = "Waiting for players ({n}/{need})", -- GDD 2.1 exact wording
 	NeedPlayers = "Need {need} hamsters to start. Invite a friend!",
 	MatchStartsIn = "Match starts in {t}",
@@ -85,13 +102,13 @@ Strings.Text = table.freeze({
 	LastCall = "Last call! The carrier is leaving",
 
 	-- Result
-	ResultWin = "You escaped!",
-	ResultLose = "Oh no!",
+	ResultWin = "YOU WIN!",
+	ResultLose = "YOU LOSE",
 	ResultDisaster = "Disaster: {v}",
 	ResultTime = "Time: {v}",
 	ResultEscaped = "Escaped: {v}",
 	ResultNobody = "nobody",
-	ResultStats = "Revives: {r}   Dizzy: {d}",
+	ResultStats = "Your stats: revives {r} · dizzy {d}",
 	BackToLobby = "Back to the lobby in {t}",
 
 	-- Banners
@@ -107,6 +124,7 @@ Strings.Text = table.freeze({
 	BannerLastChance = "Last chance!",
 	BannerLastChanceSub = "Finish the last step fast!",
 	MissionFallback = "Escape together!",
+	HintFallback = "Follow the ⭐ markers and press E (or tap) to help!",
 	DisasterFallback = "DISASTER!",
 
 	-- Markers
@@ -119,7 +137,36 @@ Strings.Text = table.freeze({
 
 	-- Toggle
 	HideHud = "Hide HUD",
+
+	-- Match intro cinematic
+	IntroTitleTh = "เจ้าของบ้านหนีไปแล้ว… แต่ลืมพวกเราไว้!",
+	IntroTitle = "The humans fled… and forgot us!",
+	IntroSkip = "Tap or press Space to skip",
+
+	-- Lobby cosmetics
+	StyleButton = "🎩 Style",
+	StyleTitle = "Hamster style",
+	StyleFur = "Fur",
+	StyleHat = "Hat",
+	StyleClose = "Close",
 })
+
+-- Cosmetic option labels (ids = Config.Cosmetics FUR_ORDER / HAT_ORDER)
+local COSMETIC: { [string]: string } = {
+	Golden = "Golden",
+	WinterWhite = "Winter White",
+	Chocolate = "Chocolate",
+	Panda = "Panda",
+	None = "None",
+	PartyHat = "Party hat",
+	Bow = "Bow",
+	ChefHat = "Chef hat",
+	Headphones = "Headphones",
+}
+
+function Strings.cosmetic(id: string): string
+	return COSMETIC[id] or id
+end
 
 function Strings.stage(stageId: string): string
 	return STAGE[stageId] or stageId
@@ -127,6 +174,15 @@ end
 
 function Strings.reason(reasonId: string): string
 	return REASON[reasonId] or reasonId
+end
+
+-- Returns (title, sub) for the step hint banner.
+function Strings.stepHint(stepName: string?): (string, string)
+	local h = stepName and STEP_HINT[stepName]
+	if h then
+		return h.text, h.sub
+	end
+	return if stepName then "Hint: " .. Strings.objective(stepName) else "Hint", Strings.Text.HintFallback
 end
 
 function Strings.objective(keyOrText: string): string

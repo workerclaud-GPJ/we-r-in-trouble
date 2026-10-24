@@ -42,6 +42,7 @@ local activity: { [Player]: Activity } = {}
 local forceStartRequested = false
 local forcedResult: Result? = nil
 local lastDisasterId: string? = nil
+local nextDisasterId: string? = nil -- debug override for the next match (setDisaster)
 local matchRunning = false
 local matchScope: Cleanup.Cleanup? = nil
 local rng = Random.new()
@@ -150,6 +151,12 @@ end
 ----------------------------------------------------------------------------
 
 local function pickDisaster(mission: Types.MissionDef): Types.DisasterDef?
+	local forced = nextDisasterId and Config.Disasters[nextDisasterId]
+	nextDisasterId = nil
+	if forced then
+		lastDisasterId = forced.id
+		return forced
+	end
 	local pool: { Types.DisasterDef } = {}
 	for _, id in mission.disasters do
 		local def = Config.Disasters[id]
@@ -307,7 +314,7 @@ local function runMatch(candidates: { Player })
 	RoundState.set(Attr.ResultWin, result.win)
 	RoundState.set(Attr.ResultReason, result.reason)
 	RoundState.set(Attr.ResultTime, math.floor(math.min(now() - startedAt, R.MATCH_HARD_LIMIT)))
-	RoundState.set(Attr.ResultDisaster, disaster.displayName)
+	RoundState.set(Attr.ResultDisaster, (DisasterService.current() or disaster).displayName)
 	RoundState.set(Attr.ResultEscaped, displayNames(result.escaped))
 	if result.win then
 		RoundState.set(Attr.Phase, Phase.Ending)
@@ -330,6 +337,11 @@ end
 
 function RoundService.isMatchRunning(): boolean
 	return matchRunning
+end
+
+-- Debug: force the disaster of the next match (nil = random again).
+function RoundService.setNextDisaster(id: string?)
+	nextDisasterId = id
 end
 
 -- Debug: skip the intermission wait (needs >= 1 ready player).

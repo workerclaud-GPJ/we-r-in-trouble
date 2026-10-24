@@ -106,6 +106,7 @@ Style.Tuning = table.freeze({
 	UiTick = 0.1, -- HUD refresh period (s)
 	MarkerRefresh = 0.25, -- marker list/text refresh period (s)
 	BannerTime = 3, -- default banner duration (>= WARNING_BANNER_MIN, GDD 4.1)
+	HintTime = 5, -- step hint banner (queued after the briefing -> visible ~5-10 s into the match)
 	BriefingTime = 4, -- "window open" banner length (briefing itself uses Config BRIEFING_TIME)
 	CriticalBlinkUnder = 30, -- timer blinks in Critical when < 30 s left (GDD 4.1)
 	MarkerNearDistance = 9, -- closer than this, the ProximityPrompt takes over; marker goes compact

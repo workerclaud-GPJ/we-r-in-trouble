@@ -18,12 +18,16 @@ local HoldService = require(Services.HoldService)
 local ReviveService = require(Services.ReviveService)
 local ItemService = require(Services.ItemService)
 local DebugCommands = require(Services.DebugCommands)
+local CosmeticsService = require(Services.CosmeticsService)
 local RoundService = require(Services.RoundService)
+local DashService = require(Services.DashService)
 
 MapService.ensureLobby()
 HoldService.start()
 ReviveService.start()
 ItemService.start()
+CosmeticsService.start() -- before PlayerStateService so lobby characters get fur/hat
 PlayerStateService.start() -- connects PlayerAdded last so every listener above is ready
 DebugCommands.start()
+DashService.start()
 RoundService.start()

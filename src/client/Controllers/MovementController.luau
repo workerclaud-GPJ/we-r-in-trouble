@@ -4,6 +4,9 @@
 	Deadline: no sprint). Also disables the Dead state locally (GDD 5.2: the client owns
 	its humanoid state).
 	  Normal -> max(MIN_MOVE_SPEED, WALK_SPEED * SpeedMult) · Downed -> DOWNED_CRAWL_SPEED, no jump · Pinned -> 0
+	  Overlays on Normal: Stunned (player attr) -> STUN_WALK_SPEED, no jump ·
+	  hold-anim stand point (character AnimStandCF, e.g. running wheel) -> 0, no jump.
+	  Dash is a short physics burst (DashController), not a WalkSpeed change.
 ]]
 
 local Players = game:GetService("Players")
@@ -40,13 +43,25 @@ local function apply()
 	elseif mode == Contract.MoveMode.Downed then
 		h.WalkSpeed = P.DOWNED_CRAWL_SPEED
 		h.JumpHeight = 0
+	elseif (player.Character :: Model):GetAttribute(Attr.AnimStandCF) ~= nil then
+		h.WalkSpeed = 0
+		h.JumpHeight = 0
+	elseif player:GetAttribute(Attr.Stunned) == true then
+		h.WalkSpeed = P.STUN_WALK_SPEED
+		h.JumpHeight = 0
 	else
 		h.WalkSpeed = math.max(P.MIN_MOVE_SPEED, P.WALK_SPEED * mult)
 		h.JumpHeight = P.JUMP_HEIGHT
 	end
 end
 
+local charConn: RBXScriptConnection? = nil
+
 local function onCharacter(char: Model)
+	if charConn then
+		charConn:Disconnect()
+	end
+	charConn = char:GetAttributeChangedSignal(Attr.AnimStandCF):Connect(apply)
 	local h = char:WaitForChild("Humanoid", 10)
 	if h and h:IsA("Humanoid") then
 		h.BreakJointsOnDeath = false
@@ -58,6 +73,7 @@ end
 function MovementController.start()
 	player:GetAttributeChangedSignal(Attr.MoveMode):Connect(apply)
 	player:GetAttributeChangedSignal(Attr.SpeedMult):Connect(apply)
+	player:GetAttributeChangedSignal(Attr.Stunned):Connect(apply)
 	player.CharacterAdded:Connect(onCharacter)
 	if player.Character then
 		task.spawn(onCharacter, player.Character)

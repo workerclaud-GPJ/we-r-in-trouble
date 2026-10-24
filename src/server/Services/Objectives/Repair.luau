@@ -66,6 +66,10 @@ function Repair.create(ctx: Common.Context): Common.Objective
 			table.insert(targets, HoldService.register({
 				part = part,
 				prompt = prompt,
+				-- objectives with a hold animation (RunWheel) are press-once toggles
+				toggle = def.holdAnim ~= nil,
+				holdAnim = def.holdAnim,
+				standPoints = Common.standPoints(anchor),
 				isOpen = ctx.isActive,
 				canHold = function(player: Player): boolean
 					return Common.canInteract(player, part)

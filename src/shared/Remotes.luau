@@ -5,11 +5,14 @@
 
 	Payloads (validated by the receiver; see docs/ARCHITECTURE.md §2):
 	  ActivityPing  C->S  ()                                   Lobby AFK refresh
+	  Dash          C->S  ()                                   dash request (server checks state + cooldown)
 	  DebugCommand  C->S  (text: string)                       Studio / dev allowlist only
 	  HudBanner     S->C  { key, text, sub?, color?, duration? }
 	  Impact        S->C  { position: Vector3, radius, telegraph, damage, prop: string?, dropHeight, lifetime }
 	  ScreenEffect  S->C  { effect: "Shake", intensity: number, duration: number }
 	  PlayerHit     S->C  { userId: number, amount: number, position: Vector3 }
+	  SetCosmetic   C->S  (kind: "FurColor" | "Hat", id: string)  Lobby only, validated vs Config.Cosmetics
+	  WorldEvent    S->C  { kind = "IceLane" | "OilPatch" | "Knockback", ... } (see WorldEventPayload)
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,7 +20,7 @@ local RunService = game:GetService("RunService")
 
 local Contract = require(script.Parent.Contract)
 
-export type RemoteName = "ActivityPing" | "DebugCommand" | "HudBanner" | "Impact" | "ScreenEffect" | "PlayerHit"
+export type RemoteName = "ActivityPing" | "Dash" | "DebugCommand" | "HudBanner" | "Impact" | "ScreenEffect" | "PlayerHit" | "SetCosmetic" | "WorldEvent"
 
 export type BannerPayload = {
 	key: string,
@@ -49,7 +52,27 @@ export type PlayerHitPayload = {
 	position: Vector3,
 }
 
-local NAMES: { RemoteName } = { "ActivityPing", "DebugCommand", "HudBanner", "Impact", "ScreenEffect", "PlayerHit" }
+-- Random events (Config/Events) + knockback. Fields per kind:
+--   IceLane   cframe (lane start on the floor, LookVector = slide dir), length, width, count,
+--             telegraph, duration (slide time), startsAt (server time the telegraph began)
+--   OilPatch  position (floor point), radius, telegraph, duration, startsAt
+--   Knockback velocity (sent only to the hit player; client owns its character physics)
+export type WorldEventPayload = {
+	kind: string,
+	id: string?,
+	cframe: CFrame?,
+	position: Vector3?,
+	length: number?,
+	width: number?,
+	radius: number?,
+	count: number?,
+	telegraph: number?,
+	duration: number?,
+	startsAt: number?,
+	velocity: Vector3?,
+}
+
+local NAMES: { RemoteName } = { "ActivityPing", "Dash", "DebugCommand", "HudBanner", "Impact", "ScreenEffect", "PlayerHit", "SetCosmetic", "WorldEvent" }
 
 local Remotes = {}
 Remotes.NAMES = NAMES

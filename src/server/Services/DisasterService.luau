@@ -2,7 +2,9 @@
 --[[
 	DisasterService — stage system (Calm → Warning → Active → Critical, fast-forward
 	rules GDD §4.1) and data-driven hazard components (§4.2): Pulse, MoveModifier,
-	ScreenEffect, TelegraphedImpact (floor-aware, NearPlayer / RandomPoint).
+	ScreenEffect, TelegraphedImpact (floor-aware, NearPlayer / RandomPoint), RisingVolume
+	(VolumeService; DisasterDef.volume). Random events (EventService, Config/Events) are
+	scheduled when Events.STAGE starts and cancelled when it ends.
 	Server decides impacts and damage; clients draw rings/debris/shake (Impact /
 	ScreenEffect remotes).
 ]]
@@ -25,6 +27,8 @@ local MapService = require(script.Parent.MapService)
 local PlayerStateService = require(script.Parent.PlayerStateService)
 local RoundState = require(script.Parent.RoundState)
 local Hud = require(script.Parent.Hud)
+local VolumeService = require(script.Parent.VolumeService)
+local EventService = require(script.Parent.EventService)
 
 local Attr = Contract.Attr
 local ORDER = Config.Stages.ORDER
@@ -133,7 +137,10 @@ local function resolveImpact(point: Vector3, radius: number, damage: number)
 	for _, player in PlayerStateService.standingMembers() do
 		local hrp, footY = footOf(player)
 		if hrp and Geometry.horizontalDistance(hrp.Position, point) <= radius and math.abs(footY - point.Y) <= IMP.MAX_HIT_DY then
-			PlayerStateService.damage(player, damage)
+			-- falling object: if the hit does not down them, they are dizzy for a moment
+			if PlayerStateService.damage(player, damage) and PlayerStateService.isStanding(player) then
+				PlayerStateService.stun(player)
+			end
 		end
 	end
 end
@@ -248,6 +255,15 @@ runComponent = function(comp: Types.HazardComponent, scope: Cleanup.Cleanup, dur
 		for _, player in PlayerStateService.teamMembers() do
 			remote:FireClient(player, payload)
 		end
+	elseif comp.type == "RisingVolume" then
+		local steps: { Types.VolumeStep } = comp.steps or {}
+		for _, step in steps do
+			scope:add(task.delay(step.delay, function()
+				if scope:alive() then
+					VolumeService.riseTo(step.level, step.riseTime)
+				end
+			end))
+		end
 	elseif comp.type == "TelegraphedImpact" then
 		scope:add(task.spawn(function()
 			local rate = math.max(0.05, comp.rate or 1)
@@ -311,6 +327,9 @@ local function enterStage(index: number, final: boolean)
 	for _, comp in components do
 		runComponent(comp, scope, nil)
 	end
+	if stageId == Config.Events.STAGE then
+		EventService.schedule(scope)
+	end
 end
 
 -- Moves to `stageId`. Forward jumps fast-forward through skipped stages (§4.1);
@@ -333,6 +352,10 @@ function DisasterService.currentStage(): string
 	return ORDER[stageIndex] or Contract.Stage.Calm
 end
 
+function DisasterService.current(): Types.DisasterDef?
+	return disaster
+end
+
 function DisasterService.start(def: Types.DisasterDef, startedAt: number)
 	DisasterService.stop()
 	disaster = def
@@ -343,6 +366,10 @@ function DisasterService.start(def: Types.DisasterDef, startedAt: number)
 	end
 	local scope = Cleanup.new()
 	matchScope = scope
+	if def.volume and hazardsEnabled then
+		VolumeService.begin(def.volume)
+		scope:add(VolumeService.stop)
+	end
 	stageIndex = 0
 	enterStage(1, true)
 
@@ -363,7 +390,16 @@ function DisasterService.start(def: Types.DisasterDef, startedAt: number)
 	end))
 end
 
+-- Debug: replace the running disaster, keeping the current stage (fast-forward from Calm).
+function DisasterService.swap(def: Types.DisasterDef, startedAt: number)
+	local stageId = DisasterService.currentStage()
+	DisasterService.start(def, startedAt)
+	DisasterService.setStage(stageId)
+end
+
 function DisasterService.stop()
+	EventService.stop()
+	VolumeService.stop()
 	if stageScope then
 		stageScope:clean()
 		stageScope = nil

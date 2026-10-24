@@ -4,7 +4,9 @@
 	The server owns prompt.Enabled; the client hides a prompt by setting its local
 	MaxActivationDistance to 0 and restores the server value otherwise.
 	Hidden: own RevivePrompt · PickupPrompt while holding · Deliver socket while not holding ·
-	every prompt while not Standing. The server re-validates everything.
+	every prompt while not Standing · a toggle-hold prompt whose stand slots are all taken
+	(attr SlotsFull, e.g. wheel full) unless you are one of its runners (you need it to Stop).
+	The server re-validates everything.
 ]]
 
 local Players = game:GetService("Players")
@@ -47,6 +49,9 @@ local function visible(prompt: ProximityPrompt): boolean
 		return not isHolding
 	elseif kindOf(prompt) == "Deliver" then
 		return isHolding
+	elseif prompt:GetAttribute(Attr.SlotsFull) == true then
+		local char = player.Character
+		return char ~= nil and char:GetAttribute(Attr.AnimStandCF) ~= nil
 	end
 	return true
 end
@@ -80,6 +85,10 @@ local function track(inst: Instance)
 			return
 		end
 		baseRange[inst] = Config.Interaction.INTERACT_RANGE
+		local prompt = inst
+		prompt:GetAttributeChangedSignal(Attr.SlotsFull):Connect(function()
+			refresh(prompt)
+		end)
 	end
 	refresh(inst)
 end
@@ -97,9 +106,18 @@ function PromptController.start()
 	Workspace.DescendantAdded:Connect(track)
 	player:GetAttributeChangedSignal(Attr.State):Connect(refreshAll)
 	player:GetAttributeChangedSignal(Attr.Holding):Connect(refreshAll)
-	player.CharacterAdded:Connect(function()
+	local standConn: RBXScriptConnection? = nil
+	local function onCharacter(char: Model)
+		if standConn then
+			standConn:Disconnect()
+		end
+		standConn = char:GetAttributeChangedSignal(Attr.AnimStandCF):Connect(refreshAll)
 		task.defer(refreshAll)
-	end)
+	end
+	player.CharacterAdded:Connect(onCharacter)
+	if player.Character then
+		onCharacter(player.Character)
+	end
 end
 
 return PromptController

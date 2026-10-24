@@ -18,4 +18,15 @@ return table.freeze({
 	TEAM_WIPE_RULE = "AllDowned", -- "AllDowned" | "NoneStanding"
 	SPAWN_HEIGHT_OFFSET = 3,
 	POOF_DELAY = 0.4, -- character kept this long after Eliminated so clients can play "Poof" -- studs above spawn part top
+
+	-- Stun ("dizzy") after a falling-object hit that does not down the player
+	STUN_DURATION = 1.5, -- s; a re-hit refreshes the timer (no stacking)
+	STUN_WALK_SPEED = 4, -- WalkSpeed while stunned (no jump)
+
+	-- Dash (Q / ButtonB / on-screen button). Server owns the cooldown.
+	DASH_COOLDOWN = 30, -- s
+	DASH_DISTANCE = 20, -- studs (approx., horizontal)
+	DASH_TIME = 0.25, -- s the burst lasts
+	DASH_MAX_FORCE = 60000, -- LinearVelocity horizontal force cap (walls still stop the dash)
+	DASH_COOLDOWN_GRACE = 0.5, -- s of clock-skew tolerance on the server cooldown check
 })

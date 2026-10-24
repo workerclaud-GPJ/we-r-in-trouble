@@ -5,7 +5,8 @@
 	  Lobby phase         "Waiting for players (1/2)"  + "Need 2 hamsters to start. Invite a friend!"
 	                      (solo start is OFF: with 1 player this stays forever on live)
 	  Intermission        "Match starts in 0:25"       + "2/4 hamsters ready"
-	  Match, I'm in lobby "Match in progress"          + "You'll join the next round (3:12)"
+	  Match/Result, I'm in lobby "Match in progress"   + "You'll join the next round (3:12)"
+	  Always on top: game title, how to play (TH + EN), "Needs 2–4 players".
 	  + AFK line when the local player is flagged Inactive in the lobby.
 ]]
 
@@ -34,6 +35,44 @@ function LobbyStatus.new(parent: Instance): LobbyStatus
 	})
 	UIUtil.list(4, false, Enum.HorizontalAlignment.Center).Parent = root
 
+	-- Game intro (always shown while the card is visible)
+	UIUtil.label(T.GameTitle, Style.Text.Title, {
+		Name = "GameTitle",
+		LayoutOrder = -4,
+		Font = Style.Font.Display,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = Style.Color.Accent,
+		Parent = root,
+	})
+	UIUtil.label(T.HowToPlayTh, Style.Text.Body, {
+		Name = "HowToPlayTh",
+		LayoutOrder = -3,
+		Font = Enum.Font.Gotham, -- FredokaOne has no Thai glyphs
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = root,
+	})
+	UIUtil.label(T.HowToPlay, Style.Text.Body, {
+		Name = "HowToPlay",
+		LayoutOrder = -2,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = root,
+	})
+	UIUtil.label(T.PlayerRange, Style.Text.Small, {
+		Name = "PlayerRange",
+		LayoutOrder = -1,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = Style.Color.TextDim,
+		Parent = root,
+	})
+	UIUtil.make("Frame", {
+		Name = "Divider",
+		LayoutOrder = 0,
+		Size = UDim2.new(0.8, 0, 0, 2),
+		BackgroundColor3 = Style.Color.PanelLight,
+		BorderSizePixel = 0,
+		Parent = root,
+	})
+
 	local title = UIUtil.label("", Style.Text.Large, {
 		Name = "Title",
 		LayoutOrder = 1,
@@ -59,7 +98,8 @@ function LobbyStatus.new(parent: Instance): LobbyStatus
 
 	local function update(snap: Snapshot)
 		local inLobbyState = snap.state == StateAdapter.VALUES.StateLobby
-		local matchRunning = snap.phase == "Match" or snap.phase == "Ending"
+		-- Result counts as "match running" for players waiting in the lobby (review m8)
+		local matchRunning = snap.phase == "Match" or snap.phase == "Ending" or snap.phase == "Result"
 		local show = snap.phase == "Lobby" or snap.phase == "Intermission" or (matchRunning and inLobbyState)
 		root.Visible = show
 		if not show then
@@ -75,7 +115,8 @@ function LobbyStatus.new(parent: Instance): LobbyStatus
 			title.Text = UIUtil.format(T.MatchStartsIn, { t = if remaining then UIUtil.clock(remaining) else "..." })
 			sub.Text = UIUtil.format(T.ReadyCount, { n = snap.playersReady, max = snap.maxPlayers })
 		else
-			local remaining = if snap.matchEndsAt then snap.matchEndsAt - snap.now else nil
+			local endsAt = if snap.phase == "Result" then snap.phaseEndsAt else snap.matchEndsAt
+			local remaining = if endsAt then endsAt - snap.now else nil
 			title.Text = T.MatchInProgress
 			sub.Text = UIUtil.format(T.JoinNextRound, { t = if remaining then UIUtil.clock(remaining) else "..." })
 		end

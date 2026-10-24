@@ -18,8 +18,12 @@ end
 start(Controllers:WaitForChild("MovementController"))
 start(Controllers:WaitForChild("PromptController"))
 start(Controllers:WaitForChild("EffectsController"))
+start(Controllers:WaitForChild("ToppleController"))
+start(Controllers:WaitForChild("HazardFxController"))
 start(Controllers:WaitForChild("ActivityController"))
 start(Controllers:WaitForChild("DebugController"))
+start(Controllers:WaitForChild("ProceduralAnimController"))
+start(Controllers:WaitForChild("DashController"))
 
 local ui = script.Parent:FindFirstChild("UI")
 local uiController = ui and ui:FindFirstChild("UIController")

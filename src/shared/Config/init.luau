@@ -15,5 +15,11 @@ return table.freeze({
 	Debug = require(script.Debug),
 	Missions = require(script.Missions),
 	Disasters = require(script.Disasters),
+	Events = require(script.Events),
 	Items = require(script.Items),
+	Audio = require(script.Audio),
+	LightingPresets = require(script.LightingPresets),
+	Cosmetics = require(script.Cosmetics),
+	Presentation = require(script.Presentation),
+	Animation = require(script.Animation),
 })

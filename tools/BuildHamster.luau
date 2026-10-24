@@ -461,3 +461,5 @@ print(
 		#cosmetics:GetChildren()
 	)
 )
+
+return true -- lets Rojo sync this as a ModuleScript (ServerStorage.Tools) so it can be run via require()

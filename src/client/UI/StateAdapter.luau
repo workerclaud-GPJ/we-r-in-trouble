@@ -552,7 +552,8 @@ end
 
 function StateAdapter.markerTargets(snap: Snapshot): { MarkerTarget }
 	local out: { MarkerTarget } = {}
-	if snap.phase ~= "Match" then
+	-- no map markers for players waiting in the lobby during someone else's match (review m8)
+	if snap.phase ~= "Match" or snap.state == VALUES.StateLobby then
 		return out
 	end
 

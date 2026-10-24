@@ -28,6 +28,11 @@
       "$properties": {
         "StreamingEnabled": false
       }
+    },
+    "ServerStorage": {
+      "Tools": {
+        "$path": "tools"
+      }
     }
   }
 }

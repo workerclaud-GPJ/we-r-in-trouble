@@ -885,3 +885,5 @@ else
 	warn(`  RESULT: {#problems} problem(s) — see above`)
 end
 print("=======================================================")
+
+return true -- lets Rojo sync this as a ModuleScript (ServerStorage.Tools) so it can be run via require()

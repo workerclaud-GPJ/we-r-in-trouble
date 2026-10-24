@@ -30,6 +30,10 @@ Contract.Tag = table.freeze({
 	LobbySpawn = "LobbySpawn",
 	Item = "Item",
 	ExitVehicle = "ExitVehicle",
+	Toppleable = "Toppleable", -- decor that topples on Big Shake (client visual; Level or auto-tag)
+	VolumeLevel = "VolumeLevel", -- Part, attr Level (0 = volume reference height + X/Z footprint)
+	EventLane = "EventLane", -- Part, attr EventId: lane band for IceLane events (LookVector = slide dir)
+	RisingVolume = "RisingVolume", -- runtime: the volume (water) Part in Map.Runtime (server creates)
 })
 
 Contract.Name = table.freeze({
@@ -43,6 +47,8 @@ Contract.Name = table.freeze({
 	RescueLightRed = "RescueLight_Red",
 	RescueLightBlue = "RescueLight_Blue",
 	Moonlight = "Moonlight",
+	VolumeSource = "VolumeSource", -- optional Part in the map: where the water comes from (hose spray FX)
+	RisingVolume = "RisingVolume", -- runtime water Part name
 })
 
 Contract.CollisionGroup = table.freeze({
@@ -119,6 +125,17 @@ Contract.Attr = table.freeze({
 	ReviveCount = "ReviveCount",
 	DownedCount = "DownedCount",
 	Credits = "Credits",
+	Breath = "Breath", -- 0..100 while a RisingVolume runs (nil otherwise)
+	FurColor = "FurColor", -- lobby cosmetic (Config.Cosmetics.FUR_ORDER)
+	Hat = "Hat", -- lobby cosmetic (Config.Cosmetics.HAT_ORDER)
+	Stunned = "Stunned", -- true while dizzy after a falling-object hit (server, PlayerStateService.stun)
+	DashAt = "DashAt", -- server time of the last accepted dash (drives the dash pose on all clients)
+	DashReadyAt = "DashReadyAt", -- server time the next dash is allowed (cooldown UI)
+	-- Character (server sets, HoldService): procedural hold animation
+	AnimState = "AnimState", -- Config.Animation.HOLD_ANIMS key, e.g. "RunInWheel" (nil = none)
+	AnimStandCF = "AnimStandCF", -- CFrame the holder is pinned to (HRP), e.g. inside the wheel
+	-- ProximityPrompt (server sets, HoldService): every stand-point slot is taken
+	SlotsFull = "SlotsFull",
 
 	-- Map markup (Level sets)
 	Priority = "Priority",
@@ -136,6 +153,15 @@ Contract.Attr = table.freeze({
 	DescendStartedAt = "DescendStartedAt",
 	DescendEndsAt = "DescendEndsAt",
 	DescendHeight = "DescendHeight",
+	-- Volumes / events
+	Level = "Level", -- VolumeLevel marker
+	EventId = "EventId", -- EventLane marker
+	BaseY = "BaseY", -- RisingVolume part: world Y of Level 0
+	RiseFrom = "RiseFrom", -- RisingVolume part: level (studs above BaseY) at RiseStartedAt
+	RiseTo = "RiseTo",
+	RiseStartedAt = "RiseStartedAt",
+	RiseEndsAt = "RiseEndsAt",
+	SurfaceY = "SurfaceY", -- RisingVolume part: world Y the surface is rising to (BaseY + RiseTo)
 })
 
 Contract.Phase = table.freeze({

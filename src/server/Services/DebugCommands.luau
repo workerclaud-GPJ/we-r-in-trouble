@@ -8,7 +8,8 @@
 	  Command Bar: game.ServerStorage.DebugInvoke:Invoke("setHP 0 PlayerName")
 
 	Commands (case-insensitive): skipStep | setStage <Calm|Warning|Active|Critical> | unlockExit |
-	  setHP <n> [player] | spawnDummyHolder <A-D> | endMatch <win|lose> | startNow
+	  setHP <n> [player] | spawnDummyHolder <A-D> | endMatch <win|lose> | startNow |
+	  setDisaster <Earthquake|Flood> (next match; swaps the running one too) | triggerEvent <id>
 ]]
 
 local Players = game:GetService("Players")
@@ -26,6 +27,8 @@ local PlayerStateService = require(script.Parent.PlayerStateService)
 local DisasterService = require(script.Parent.DisasterService)
 local MissionService = require(script.Parent.MissionService)
 local RoundService = require(script.Parent.RoundService)
+local EventService = require(script.Parent.EventService)
+local RoundState = require(script.Parent.RoundState)
 
 local D = Config.Debug
 
@@ -72,6 +75,18 @@ local function findPlayer(name: string?, caller: Player?): Player?
 		return caller
 	end
 	return PlayerStateService.teamMembers()[1]
+end
+
+local function keyIn(map: { [string]: any }, arg: string?): string?
+	if not arg then
+		return nil
+	end
+	for id in map do
+		if string.lower(id) == string.lower(arg) then
+			return id
+		end
+	end
+	return nil
 end
 
 local function stageId(arg: string?): string?
@@ -130,6 +145,25 @@ function DebugCommands.run(text: string, caller: Player?): string
 		RoundService.forceEnd(mode == "win")
 	elseif cmd == "startnow" then
 		RoundService.forceStart()
+	elseif cmd == "setdisaster" then
+		local id = keyIn(Config.Disasters, a1)
+		if not id then
+			return "usage: setDisaster <Earthquake|Flood>"
+		end
+		RoundService.setNextDisaster(id)
+		local startedAt = RoundState.get(Contract.Attr.MatchStartedAt)
+		if RoundService.isMatchRunning() and DisasterService.current() and typeof(startedAt) == "number" then
+			DisasterService.swap(Config.Disasters[id], startedAt)
+		end
+	elseif cmd == "triggerevent" then
+		local id = keyIn(Config.Events.DEFS, a1)
+		if not id then
+			return "usage: triggerEvent <" .. table.concat(EventService.ids(), "|") .. ">"
+		end
+		local ok, reason = EventService.trigger(id)
+		if not ok then
+			return reason or "failed"
+		end
 	else
 		return "unknown command"
 	end
@@ -168,8 +202,11 @@ function DebugCommands.start()
 	end
 	bindable.Parent = ServerStorage
 
-	-- Chat command exists only where debug can work (Studio, or a dev allowlist is configured)
-	if (D.ENABLE_IN_STUDIO and RunService:IsStudio()) or #D.DEV_USER_IDS > 0 then
+	-- The chat command is ALWAYS registered so "/dbg ..." never shows up as a public chat
+	-- message: TextChatCommand swallows the line. On live without a dev allowlist it is a
+	-- silent no-op (allowed() is false -> no effect, no reply, no remote from the client).
+	local debugAvailable = (D.ENABLE_IN_STUDIO and RunService:IsStudio()) or #D.DEV_USER_IDS > 0
+	do
 		local ok, err = pcall(function()
 			local commands = TextChatService:FindFirstChild("TextChatCommands")
 			if not commands then
@@ -180,6 +217,7 @@ function DebugCommands.start()
 			local command = Instance.new("TextChatCommand")
 			command.Name = "DebugCommand"
 			command.PrimaryAlias = D.CHAT_PREFIX
+			command:SetAttribute(D.CHAT_ENABLED_ATTR, debugAvailable)
 			command.Triggered:Connect(function(source: TextSource, unfilteredText: string)
 				local player = Players:GetPlayerByUserId(source.UserId)
 				if player then
@@ -188,7 +226,7 @@ function DebugCommands.start()
 			end)
 			command.Parent = commands
 		end)
-		if not ok then
+		if not ok and debugAvailable then
 			warn("[Debug] chat command unavailable:", err)
 		end
 	end

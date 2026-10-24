@@ -42,8 +42,10 @@ PlayerStateService.Downed = Signal.new() :: Signal.Signal<Player>
 PlayerStateService.Eliminated = Signal.new() :: Signal.Signal<Player>
 PlayerStateService.Left = Signal.new() :: Signal.Signal<Player>
 PlayerStateService.Revived = Signal.new() :: Signal.Signal<Player>
+PlayerStateService.Stunned = Signal.new() :: Signal.Signal<Player> -- fired when a stun starts (HoldService drops holds)
 
 local records: { [Player]: Record } = {}
+local stunToken: { [Player]: number } = {} -- bumps on every stun start/clear; stale timers no-op
 local globalModifiers: { [string]: number } = {}
 local matchActive = false
 
@@ -279,7 +281,15 @@ local function setProtection(player: Player, seconds: number)
 	player:SetAttribute(Attr.ProtectedUntil, now() + seconds)
 end
 
+local function clearStun(player: Player)
+	stunToken[player] = (stunToken[player] or 0) + 1
+	if player:GetAttribute(Attr.Stunned) ~= nil then
+		player:SetAttribute(Attr.Stunned, nil)
+	end
+end
+
 local function resetAttributes(player: Player)
+	clearStun(player)
 	player:SetAttribute(Attr.HP, P.MAX_HP)
 	player:SetAttribute(Attr.MaxHP, P.MAX_HP)
 	player:SetAttribute(Attr.MoveMode, MoveMode.Normal)
@@ -336,6 +346,7 @@ function PlayerStateService.endMatch()
 		r.token += 1
 		r.beingRevived = false
 		table.clear(r.modifiers)
+		clearStun(player)
 		player:SetAttribute(Attr.RespawnAt, nil)
 		player:SetAttribute(Attr.BleedOutEndsAt, nil)
 		recomputeSpeed(player)
@@ -373,6 +384,7 @@ function PlayerStateService.eliminate(player: Player, extraDelay: number?)
 	r.token += 1
 	r.beingRevived = false
 	r.eliminations += 1
+	clearStun(player)
 	player:SetAttribute(Attr.State, State.Eliminated)
 	player:SetAttribute(Attr.MoveMode, MoveMode.Normal)
 	player:SetAttribute(Attr.BleedOutEndsAt, nil)
@@ -409,6 +421,7 @@ function PlayerStateService.down(player: Player)
 		return
 	end
 	r.token += 1
+	clearStun(player) -- Downed keeps its own behaviour; a stun never overrides it
 	r.bleedRemaining = P.BLEED_OUT_TIME
 	r.beingRevived = false
 	player:SetAttribute(Attr.HP, 0)
@@ -451,6 +464,7 @@ end
 
 function PlayerStateService.setEscaped(player: Player)
 	if PlayerStateService.isParticipant(player) then
+		clearStun(player)
 		player:SetAttribute(Attr.State, State.Escaped)
 		player:SetAttribute(Attr.MoveMode, MoveMode.Normal)
 		player:SetAttribute(Attr.BleedOutEndsAt, nil)
@@ -466,7 +480,8 @@ function PlayerStateService.isProtected(player: Player): boolean
 	return typeof(untilT) == "number" and now() < untilT
 end
 
-function PlayerStateService.damage(player: Player, amount: number): boolean
+-- quiet = true: no PlayerHit ("Bonk!") broadcast (damage over time, e.g. drowning).
+function PlayerStateService.damage(player: Player, amount: number, quiet: boolean?): boolean
 	if not matchActive or amount <= 0 or not PlayerStateService.isParticipant(player) then
 		return false
 	end
@@ -476,16 +491,40 @@ function PlayerStateService.damage(player: Player, amount: number): boolean
 	local hp = player:GetAttribute(Attr.HP)
 	local newHp = math.max(0, (if typeof(hp) == "number" then hp else P.MAX_HP) - amount)
 	player:SetAttribute(Attr.HP, newHp)
-	local hrp = PlayerStateService.getHRP(player)
-	Remotes.get("PlayerHit"):FireAllClients({
-		userId = player.UserId,
-		amount = amount,
-		position = if hrp then hrp.Position else Vector3.zero,
-	})
+	if not quiet then
+		local hrp = PlayerStateService.getHRP(player)
+		Remotes.get("PlayerHit"):FireAllClients({
+			userId = player.UserId,
+			amount = amount,
+			position = if hrp then hrp.Position else Vector3.zero,
+		})
+	end
 	if newHp <= 0 then
 		PlayerStateService.down(player)
 	end
 	return true
+end
+
+-- Short "dizzy" stun (falling-object hit that did not down the player). Standing only;
+-- a re-hit refreshes the timer (no stacking). MovementController slows + blocks jump,
+-- dash is refused, CharacterFx shows the orbiting stars, ProceduralAnim plays Dizzy.
+function PlayerStateService.stun(player: Player, duration: number?)
+	if not matchActive or not PlayerStateService.isStanding(player) then
+		return
+	end
+	local token = (stunToken[player] or 0) + 1
+	stunToken[player] = token
+	player:SetAttribute(Attr.Stunned, true)
+	PlayerStateService.Stunned:Fire(player)
+	task.delay(duration or P.STUN_DURATION, function()
+		if stunToken[player] == token then
+			clearStun(player)
+		end
+	end)
+end
+
+function PlayerStateService.isStunned(player: Player): boolean
+	return player:GetAttribute(Attr.Stunned) == true
 end
 
 -- Debug: set HP directly (<= 0 downs the player).
@@ -584,6 +623,7 @@ local function onPlayerRemoving(player: Player)
 		c:Disconnect()
 	end
 	records[player] = nil
+	stunToken[player] = nil
 end
 
 function PlayerStateService.start()

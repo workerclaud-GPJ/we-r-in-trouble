@@ -38,6 +38,55 @@ export type HazardComponent = {
 	maxDist: number?,
 	propCollides: boolean?,
 	propPool: { string }?,
+	-- RisingVolume: level steps run when the stage starts (levels in studs above Level 0)
+	steps: { VolumeStep }?,
+}
+
+export type VolumeStep = {
+	delay: number, -- s after the stage starts
+	level: number, -- target level (studs above the VolumeLevel 0 marker), clamped to maxLevel
+	riseTime: number, -- s to reach it (linear) from wherever the surface is
+}
+
+-- GDD §4.2 RisingVolume + Slowed / Submerged status effects (theme-free: "volume", not "water").
+export type VolumeDef = {
+	maxLevel: number,
+	tick: number, -- server check interval (s)
+	wadeDepth: number, -- surface >= feet + wadeDepth -> Slowed
+	wadeSpeedMult: number,
+	headHeight: number, -- head top above feet when the character has no Head part
+	breathMax: number,
+	breathDrain: number, -- per s while the head is under the surface
+	breathRefill: number, -- per s above the surface
+	drownDamage: number, -- per drownInterval once Breath = 0
+	drownInterval: number,
+	spawnSafeDepth: number, -- spawn pads with surface >= top + this are skipped by respawn
+	enableFlag: string?, -- MapService flag set while the volume runs (enables high-ground PlayerSpawns)
+	color: Color3,
+	transparency: number,
+	underwaterTint: Color3,
+	underwaterBlur: number,
+}
+
+-- Random events (Config/Events), independent of the disaster.
+export type EventDef = {
+	id: string,
+	kind: string, -- "IceLane" | "OilPatch"
+	displayName: string,
+	warningText: string,
+	telegraph: number,
+	duration: number, -- IceLane: slide time; OilPatch: how long the patch stays
+	-- IceLane
+	damage: number?,
+	knockback: number?, -- horizontal speed (studs/s)
+	knockbackUp: number?,
+	width: number?,
+	length: number?, -- fallback lane length (no EventLane marker)
+	count: number?,
+	cubeSize: number?,
+	-- OilPatch
+	radius: number?,
+	speedMult: number?,
 }
 
 export type DisasterDef = {
@@ -47,6 +96,7 @@ export type DisasterDef = {
 	stages: { [string]: { HazardComponent } },
 	stageOverrides: { [string]: number }?, -- stage id -> duration
 	propPool: { string }?,
+	volume: VolumeDef?, -- RisingVolume settings (only disasters that use RisingVolume)
 }
 
 export type ObjectiveDef = {
