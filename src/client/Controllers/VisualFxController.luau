@@ -410,6 +410,42 @@ local function buildAmbient(map: Instance)
 end
 
 ----------------------------------------------------------------------------
+-- sound hooks: a click when an objective takes an item / tool press (Delivered goes up) and when
+-- a switch (tap, fan, sharpener) changes; a pop when you pick something up
+----------------------------------------------------------------------------
+
+local function anchorPos(inst: Instance): Vector3?
+	if inst:IsA("BasePart") then
+		return inst.Position
+	elseif inst:IsA("Model") then
+		return inst:GetPivot().Position
+	end
+	return nil
+end
+
+local function hookSounds(map: Instance)
+	for _, a in CollectionService:GetTagged(Contract.Tag.ObjectiveAnchor) do
+		if a:IsDescendantOf(map) then
+			local last = a:GetAttribute(Contract.Attr.Delivered)
+			table.insert(conns, a:GetAttributeChangedSignal(Contract.Attr.Delivered):Connect(function()
+				local d = a:GetAttribute(Contract.Attr.Delivered)
+				if typeof(d) == "number" and d > (if typeof(last) == "number" then last else 0) then
+					Sound.play("BatteryInsert", anchorPos(a))
+				end
+				last = d
+			end))
+		end
+	end
+	for _, sw in CollectionService:GetTagged("Switch") do
+		if sw:IsDescendantOf(map) then
+			table.insert(conns, sw:GetAttributeChangedSignal("ActiveUntil"):Connect(function()
+				Sound.play("BatteryInsert", anchorPos(sw))
+			end))
+		end
+	end
+end
+
+----------------------------------------------------------------------------
 -- lifecycle: rebuilt for every match map (Workspace.Map)
 ----------------------------------------------------------------------------
 
@@ -436,6 +472,7 @@ local function setup(map: Instance)
 	local ok, err = pcall(function()
 		buildWater(map)
 		buildAmbient(map)
+		hookSounds(map)
 	end)
 	if not ok then
 		warn("[VisualFx]", err)
@@ -461,6 +498,14 @@ function VisualFxController.start()
 		end
 	end
 	Workspace.ChildAdded:Connect(onChild)
+	-- pickup pop (2D, local player only)
+	local me = Players.LocalPlayer
+	me:GetAttributeChangedSignal(Contract.Attr.Holding):Connect(function()
+		local h = me:GetAttribute(Contract.Attr.Holding)
+		if typeof(h) == "string" and h ~= "" then
+			Sound.play("RespawnPop", nil, 0.6)
+		end
+	end)
 	Workspace.ChildRemoved:Connect(function(child: Instance)
 		if child.Name == "Map" then
 			teardown()
