@@ -31,6 +31,7 @@ start(Controllers:WaitForChild("ItemBookController")) -- B: item book (what each
 start(Controllers:WaitForChild("StyleShopController")) -- lobby style shop + Ninja double jump
 start(Controllers:WaitForChild("LauncherController")) -- toaster / sponge launchers
 start(Controllers:WaitForChild("WheelProgressController")) -- power bar over the running wheel
+start(Controllers:WaitForChild("VisualFxController")) -- water flow / splashes, dust motes, moonbeam, footstep dust
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 
