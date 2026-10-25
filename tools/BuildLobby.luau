@@ -301,11 +301,13 @@ local board = P(lobby, "TitleBoard", Vector3.new(60, 12, 1), at(0, 70, -D / 2 + 
 surfaceText(board, Enum.NormalId.Back, {
 	{ name = "Title", text = "WE R IN TROUBLE", size = 150, color = Color3.fromRGB(255, 215, 90) },
 }, 12)
-local hint = P(lobby, "HintBoard", Vector3.new(44, 6, 1), at(0, 25, -D / 2 + 4.6), Color3.fromRGB(70, 45, 30), Enum.Material.Wood)
+-- standing signpost on the rug's north edge (readable from the spawn, not hidden by the houses)
+P(lobby, "HintPost", Vector3.new(1.2, 9, 1.2), at(22, 4.5, -6), Color3.fromRGB(70, 45, 30), Enum.Material.Wood)
+local hint = P(lobby, "HintBoard", Vector3.new(24, 7, 0.8), at(22, 11, -6) * CFrame.Angles(0, math.rad(-15), 0), Color3.fromRGB(70, 45, 30), Enum.Material.Wood)
 surfaceText(hint, Enum.NormalId.Back, {
-	{ name = "Hint", text = "Walk into a hamster house to play! 🐹", size = 90, color = Color3.new(1, 1, 1) },
-	{ name = "HintTh", text = "เดินเข้าบ้านหนูเพื่อเริ่มเล่น", size = 70, color = Color3.fromRGB(255, 230, 160) },
-}, 10)
+	{ name = "Hint", text = "Walk into a hamster house to play! 🐹", size = 34, color = Color3.new(1, 1, 1) },
+	{ name = "HintTh", text = "เดินเข้าบ้านหนูเพื่อเริ่มเล่น", size = 30, color = Color3.fromRGB(255, 230, 160) },
+}, 20)
 for _, d in hint:GetDescendants() do
 	if d:IsA("TextLabel") and d.Name == "HintTh" then
 		d.Font = Enum.Font.Gotham -- Thai glyphs
