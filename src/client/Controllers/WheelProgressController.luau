@@ -84,7 +84,11 @@ local function update()
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	local alive: { [Instance]: boolean } = {}
 	for _, a in CollectionService:GetTagged(Contract.Tag.ObjectiveAnchor) do
-		if a:GetAttribute(Attr.ObjectiveId) == "RunWheel" and a:IsDescendantOf(Workspace) and a:FindFirstChildWhichIsA("ProximityPrompt", true) then
+		local prompt = a:FindFirstChildWhichIsA("ProximityPrompt", true)
+		local pr0 = a:GetAttribute(Attr.Progress)
+		-- open now (prompt enabled), or just filled (keep "Power full!" for a moment)
+		local relevant = prompt ~= nil and (prompt.Enabled or (typeof(pr0) == "number" and pr0 >= 1))
+		if a:GetAttribute(Attr.ObjectiveId) == "RunWheel" and a:IsDescendantOf(Workspace) and relevant then
 			local part = anchorPart(a)
 			if part then
 				local pr = a:GetAttribute(Attr.Progress)
