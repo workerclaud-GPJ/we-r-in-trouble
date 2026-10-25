@@ -466,9 +466,25 @@ function ItemService.drop(player: Player, at: Vector3?)
 	PlayerStateService.setPlayerSpeedModifier(player, CARRY_KEY, nil)
 	item.model:SetAttribute(Attr.Carrier, 0)
 	setAnchored(item, true)
-	placeAt(item, if hit then hit.Position else origin - Vector3.new(0, 2.5, 0))
-	if PHYSICS then
+	-- ItemPhysics: let go in front of the hamster and let it really fall / bounce (a small toss
+	-- forward) instead of snapping onto the floor; a wall in front shortens the toss
+	local tossed = false
+	if PHYSICS and not at and hrp then
+		local wall = if look.Magnitude > 0 then Workspace:Raycast(origin, look, params) else nil
+		local front = if wall then origin + look.Unit * math.max(0, (wall.Position - origin).Magnitude - 1.5) else origin + look
+		item.model:PivotTo(CFrame.new(front) * (item.handle.CFrame - item.handle.Position))
 		setLying(item)
+		if item.physics then
+			local fwd = if look.Magnitude > 0 then look.Unit * I.ITEM_TOSS_SPEED else Vector3.zero
+			item.handle.AssemblyLinearVelocity = fwd + Vector3.new(0, I.ITEM_TOSS_UP, 0)
+			tossed = true
+		end
+	end
+	if not tossed then
+		placeAt(item, if hit then hit.Position else origin - Vector3.new(0, 2.5, 0))
+		if PHYSICS then
+			setLying(item)
+		end
 	end
 	item.droppedAt = now()
 
