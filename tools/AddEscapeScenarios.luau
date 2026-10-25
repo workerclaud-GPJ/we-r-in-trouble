@@ -533,7 +533,7 @@ reveal(movedRack, "RackPushed")
 local hole = Instance.new("Model")
 hole.Name = "MouseHole"
 hole.Parent = secret
-local hz = 121.6
+local hz = 119.8 -- just in front of the visible south wall (tools/AddKitchenWalls.luau, face z 120.6)
 local arch = part(hole, "Hole", Vector3.new(0.4, 9, 9), CFrame.new(111, 3.2, hz) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(12, 10, 10))
 arch.Shape = Enum.PartType.Cylinder
 part(hole, "HoleFloor", Vector3.new(9, 0.2, 1), CFrame.new(111, 0.1, hz - 0.2), Color3.fromRGB(12, 10, 10))
