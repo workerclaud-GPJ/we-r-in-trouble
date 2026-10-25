@@ -359,8 +359,8 @@ local function objectivesFromAnchors(): { Objective }
 	local byId: { [string]: Objective } = {}
 	local list: { Objective } = {}
 	for _, anchor in CollectionService:GetTagged(NAMES.TagObjectiveAnchor) do
-		if not inMap(anchor) or snap.explore then
-			continue -- explore rounds: no objective markers
+		if not inMap(anchor) then
+			continue
 		end
 		local id = str(anchor, NAMES.AttrObjectiveId)
 		if not id then
@@ -569,8 +569,8 @@ function StateAdapter.markerTargets(snap: Snapshot): { MarkerTarget }
 		objById[o.id] = o
 	end
 	for _, anchor in CollectionService:GetTagged(NAMES.TagObjectiveAnchor) do
-		if not inMap(anchor) then
-			continue
+		if not inMap(anchor) or snap.explore then
+			continue -- explore rounds: no objective markers
 		end
 		local id = str(anchor, NAMES.AttrObjectiveId)
 		local obj = id and objById[id]
