@@ -8,6 +8,8 @@ return table.freeze({
 	MEDIUM_CARRY_SPEED_MULT = 0.75, -- ItemDef.size = "Medium" (e.g. Scissors)
 	ITEM_KILLY_RESPAWN_DELAY = 3,
 	ITEM_DROP_RAY_DISTANCE = 4,
+	ITEM_TOSS_SPEED = 5, -- ItemPhysics drop: forward speed (studs/s) of the released item
+	ITEM_TOSS_UP = 3, -- ...and its small upward pop
 	ITEM_HINT_RADIUS = 30,
 	MULTIHOLD_ASSIST_AFTER = 75,
 	MULTIHOLD_ASSIST_MIN = 2,

@@ -89,6 +89,8 @@ local function noCollide(inst: Instance)
 	end
 end
 
+local MAX_DEBRIS_SPEED = 22 -- studs/s cap for landed debris under physics
+
 local function makeProp(name: string?): Model
 	local model = Instance.new("Model")
 	local assets = ReplicatedStorage:FindFirstChild(Contract.Folder.Assets)
@@ -221,7 +223,8 @@ local function onImpact(payload: any)
 		Sound.play("FallWhistle", pos + Vector3.new(0, dropHeight * 0.5, 0))
 	end
 
-	-- debris (Art §3.2): random spin, +180° while falling (Quad In), bounce, dust, fade
+	-- debris (Art §3.2): random spin, +180° while falling (Quad In, lands exactly on the telegraph),
+	-- then local physics takes over (bounce / roll / tumble), dust, fade
 	local model = makeProp(prop)
 	local spin = CFrame.Angles(math.random() * 6.28, math.random() * 6.28, math.random() * 6.28)
 	local _, size = model:GetBoundingBox()
@@ -245,12 +248,72 @@ local function onImpact(payload: any)
 		if rp and (rp - pos).Magnitude <= NEAR_SHAKE_RADIUS then
 			EffectsController.shake(0.12, 0.2)
 		end
-		driver.Value = endCf + Vector3.new(0, 0.6, 0)
-		local bounce = TweenService:Create(driver, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Value = endCf })
-		bounce.Completed:Connect(function()
-			driver:Destroy()
+		driver:Destroy()
+		-- hand the prop to real (local) physics: it bounces, rolls and tumbles where it landed
+		-- instead of freezing. Items collision group: the world and items only, never players.
+		local parts: { BasePart } = {}
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				table.insert(parts, d)
+			end
+		end
+		local root = parts[1]
+		if not root or not model.Parent then
+			return
+		end
+		model:PivotTo(endCf + Vector3.new(0, 0.4, 0))
+		-- landed inside solid geometry (counter edge, table leg…)? physics would shoot it out:
+		-- keep the old still landing for this one
+		local overlap = OverlapParams.new()
+		overlap.FilterType = Enum.RaycastFilterType.Exclude
+		local exclude: { Instance } = { model }
+		for _, plr in Players:GetPlayers() do
+			if plr.Character then
+				table.insert(exclude, plr.Character)
+			end
+		end
+		overlap.FilterDescendantsInstances = exclude
+		overlap.RespectCanCollide = true
+		for _, part in parts do
+			if #Workspace:GetPartsInPart(part, overlap) > 0 then
+				model:PivotTo(endCf)
+				return
+			end
+		end
+		for i, part in parts do
+			if i > 1 then
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = root
+				weld.Part1 = part
+				weld.Parent = root
+			end
+		end
+		for _, part in parts do
+			part.CanQuery = false
+			part.CanTouch = false
+			pcall(function()
+				part.CollisionGroup = Contract.CollisionGroup.Items
+			end)
+			part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.35, 0.45, 1, 1)
+			part.CanCollide = true
+			part.Anchored = false
+		end
+		local rng = Random.new()
+		root.AssemblyLinearVelocity = Vector3.new(rng:NextNumber(-7, 7), rng:NextNumber(9, 15), rng:NextNumber(-7, 7))
+		root.AssemblyAngularVelocity = Vector3.new(rng:NextNumber(-9, 9), rng:NextNumber(-9, 9), rng:NextNumber(-9, 9))
+		-- safety: never let a prop get launched (depenetration, stacked debris)
+		local t0 = os.clock()
+		local clamp: RBXScriptConnection
+		clamp = RunService.Heartbeat:Connect(function()
+			if not root.Parent or os.clock() - t0 > 2 then
+				clamp:Disconnect()
+				return
+			end
+			local v = root.AssemblyLinearVelocity
+			if v.Magnitude > MAX_DEBRIS_SPEED then
+				root.AssemblyLinearVelocity = v.Unit * MAX_DEBRIS_SPEED
+			end
 		end)
-		bounce:Play()
 	end)
 	fall:Play()
 	fadeAndDestroy(model, telegraph + math.max(0, lifetime - FADE_TIME))
