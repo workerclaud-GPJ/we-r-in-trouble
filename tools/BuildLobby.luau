@@ -378,14 +378,14 @@ for i = 1, 3 do
 	deco(P(m, "Mat", Vector3.new(12, 0.3, 6), at(cx, 0.2, cz + HD / 2 + 5), color, Enum.Material.Fabric))
 
 	-- sign above the door (server writes Count / Status)
-	local sign = P(m, "Sign", Vector3.new(16, 7, 0.6), at(cx, roofY + 13, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
+	local sign = P(m, "Sign", Vector3.new(16, 7, 0.6), at(cx, roofY + 16, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
 	sign.CanCollide = false
 	surfaceText(sign, Enum.NormalId.Back, {
 		{ name = "Title", text = `ROOM {i}`, size = 52, color = color:Lerp(Color3.new(1, 1, 1), 0.3) },
 		{ name = "Count", text = "0/4 🐹", size = 44, color = Color3.new(1, 1, 1) },
 		{ name = "Status", text = "Walk in!", size = 36, color = Color3.fromRGB(255, 230, 150) },
 	}, 14)
-	local post = P(m, "SignPost", Vector3.new(1, 6, 1), at(cx, roofY + 8.5, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
+	local post = P(m, "SignPost", Vector3.new(1, 5, 1), at(cx, roofY + 10.5, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
 	post.CanCollide = false
 end
 
