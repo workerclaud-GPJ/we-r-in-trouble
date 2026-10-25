@@ -115,7 +115,7 @@ local function update()
 						b.fill.Size = UDim2.fromScale(progress, 1)
 						if sustain then
 							b.fill.BackgroundColor3 = if progress > 0 then Color3.fromRGB(110, 230, 120) else Color3.fromRGB(230, 90, 80)
-							b.label.Text = if progress > 0 then "📻 Radio power ON ⚡ keep running!" else "📻 No power! Run the wheel"
+							b.label.Text = if progress > 0 then "⚡ Power ON" else "⚡ No power"
 						else
 							b.fill.BackgroundColor3 = if progress >= 1 then Color3.fromRGB(110, 230, 120) else Color3.fromRGB(255, 210, 70)
 							b.label.Text = if progress >= 1 then "Power full! ⚡" else `Power {math.floor(progress * 100)}%`

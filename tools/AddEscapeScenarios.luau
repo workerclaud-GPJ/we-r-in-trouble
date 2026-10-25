@@ -141,7 +141,7 @@ local SPAWNS: { { name: string, pos: Vector3, note: string } } = {
 	{ name = "Scn_Table2", pos = Vector3.new(78, 38.25, 97), note = "table start: charger cable 2 (dining table top)" },
 	{ name = "Scn_CounterW", pos = Vector3.new(58, 45, 25), note = "window: scissors, north counter west of the dish rack" },
 	{ name = "Scn_Pantry", pos = Vector3.new(12, 0, 28), note = "drain: scissors, floor by the pantry door" },
-	{ name = "Scn_BackCorner", pos = Vector3.new(150, 0, 100), note = "drain: charger cable, floor corner by the back door" },
+	{ name = "Scn_BackCorner", pos = Vector3.new(144, 0, 110), note = "drain: charger cable, floor corner by the back door (clear of the washing machine)" },
 	-- hiding spots (MissionDef.fixedLoot spawn lists pick one per round)
 	{ name = "Scn_TableFruit", pos = Vector3.new(94, 38.25, 99), note = "table top, behind the fruit bowl" },
 	{ name = "Scn_TableEdge", pos = Vector3.new(44, 38.25, 99), note = "table top, far west corner" },
