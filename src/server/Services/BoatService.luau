@@ -26,8 +26,8 @@ local PlayerStateService = require(script.Parent.PlayerStateService)
 local Attr = Contract.Attr
 
 local BOAT_ITEM = "Bottlecap"
-local RIDE_DEPTH = 2.5 -- water over the ground under you (studs) to start riding
-local STOP_DEPTH = 1.2
+local RIDE_DEPTH = 1.2 -- water over the ground under you (studs) to start riding (= wading depth)
+local STOP_DEPTH = 0.7
 local MAX_ABOVE = 4 -- feet more than this above the surface (on a counter) = not riding
 local SPEED = 1.7
 local SPEED_KEY = "Boat"

@@ -35,6 +35,8 @@ function Deliver.create(ctx: Common.Context): Common.Objective
 	local conns: { RBXScriptConnection } = {}
 
 	local function publish()
+		-- WantedItemController: items with this capability / type get a marker while the step is open
+		ctx.set("Wants", capability or itemType)
 		ctx.set(Attr.Delivered, delivered)
 		ctx.set(Attr.Count, count)
 		ctx.set(Attr.Progress, if count > 0 then math.min(1, delivered / count) else 0)
