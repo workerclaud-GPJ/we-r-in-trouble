@@ -139,6 +139,16 @@ function DebugCommands.run(text: string, caller: Player?): string
 			return "usage: setHP <n> [player]"
 		end
 		PlayerStateService.setHP(target, n)
+	elseif cmd == "damage" then
+		-- real damage path (style perks apply: Gym takes 25 % less)
+		local n = tonumber(a1)
+		local target = findPlayer(a2, caller)
+		if not (n and target) then
+			return "usage: damage <n> [player]"
+		end
+		local before = target:GetAttribute(Contract.Attr.HP)
+		PlayerStateService.damage(target, n)
+		return `damage {n}: HP {tostring(before)} -> {tostring(target:GetAttribute(Contract.Attr.HP))}`
 	elseif cmd == "spawndummyholder" then
 		if not a1 or not MissionService.toggleDummyHolder(a1) then
 			return "no active MultiHold anchor " .. tostring(a1)
