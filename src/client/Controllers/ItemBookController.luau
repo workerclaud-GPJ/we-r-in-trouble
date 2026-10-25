@@ -142,7 +142,7 @@ function ItemBookController.toggle(force: boolean?)
 end
 
 local function build()
-	local g = make("ScreenGui", { Name = "WRIT_ItemBook", ResetOnSpawn = false, DisplayOrder = 8, IgnoreGuiInset = true }, player:WaitForChild("PlayerGui"))
+	local g = make("ScreenGui", { Name = "WRIT_ItemBook", ResetOnSpawn = false, DisplayOrder = 30, IgnoreGuiInset = true }, player:WaitForChild("PlayerGui"))
 	local b = make("Frame", {
 		Name = "Book", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(440, 400),
 		BackgroundColor3 = Color3.fromRGB(120, 70, 40), Visible = false,
@@ -159,7 +159,7 @@ local function build()
 	}, b)
 	local close = make("TextButton", {
 		AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10), Size = UDim2.fromOffset(34, 34),
-		BackgroundColor3 = Color3.fromRGB(230, 90, 80), Text = "✕", Font = Enum.Font.FredokaOne, TextSize = 20, TextColor3 = Color3.new(1, 1, 1),
+		BackgroundColor3 = Color3.fromRGB(230, 90, 80), Text = "X", Font = Enum.Font.FredokaOne, TextSize = 20, TextColor3 = Color3.new(1, 1, 1),
 	}, b)
 	make("UICorner", { CornerRadius = UDim.new(1, 0) }, close)
 	close.Activated:Connect(function()
