@@ -36,6 +36,7 @@ local EXITS = {
 	{ id = "Carrier", name = "🚗 Rescue carrier" },
 	{ id = "Window", name = "🌙 The window" },
 	{ id = "Drain", name = "💧 The drain" },
+	{ id = "MouseHole", name = "🐭 SECRET: the mouse hole", secret = true },
 }
 
 local function foundSet(): { [string]: boolean }
@@ -88,7 +89,7 @@ local function refreshJournal()
 		l.TextSize = 16
 		l.TextXAlignment = Enum.TextXAlignment.Left
 		l.TextColor3 = if f[e.id] then Color3.fromRGB(140, 240, 150) else Color3.fromRGB(170, 170, 190)
-		l.Text = if f[e.id] then `✅ {e.name}` else "❔ ??? (not found yet)"
+		l.Text = if f[e.id] then `✅ {e.name}` elseif (e :: any).secret then "❔ ??? (secret — very rare)" else "❔ ??? (not found yet)"
 		l.Parent = jp
 	end
 	local hint = Instance.new("TextLabel")
@@ -235,7 +236,7 @@ local function build()
 	}, g)
 	make("UICorner", { CornerRadius = UDim.new(0, 12) }, jBtn)
 	local jPanel = make("Frame", {
-		Name = "Journal", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 168, 0.5, 80), Size = UDim2.fromOffset(250, 150),
+		Name = "Journal", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 168, 0.5, 80), Size = UDim2.fromOffset(270, 185),
 		BackgroundColor3 = Color3.fromRGB(40, 50, 80), BackgroundTransparency = 0.05, Visible = false,
 	}, g)
 	make("UICorner", { CornerRadius = UDim.new(0, 12) }, jPanel)

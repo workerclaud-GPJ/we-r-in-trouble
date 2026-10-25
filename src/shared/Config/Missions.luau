@@ -211,4 +211,29 @@ MISSIONS.MidnightKitchen_Drain = {
 	},
 }
 
+-- SECRET (Config.Round.SECRET_CHANCE, 5 %): a mouse hole behind the shoe rack. No items needed:
+-- everyone pushes the shoe rack aside together, then squeezes through the hole.
+MISSIONS.MidnightKitchen_MouseHole = {
+	id = "MidnightKitchen_MouseHole",
+	mapId = "MidnightKitchen",
+	displayName = "Escape the kitchen!",
+	explore = true,
+	disasters = { "Earthquake", "Flood" },
+	exitFlag = "RackPushed",
+	exitArrivalDelay = 0,
+	exitKind = "MouseHole",
+	exitId = "MouseHole",
+	hideParts = NO_COOKBOOK_RAMP,
+	loot = { budget = 4, entries = CLUTTER },
+	steps = {
+		{
+			id = "PushRack",
+			displayName = "Push the shoe rack",
+			objectives = {
+				{ id = "PushRack", kind = "MultiHold", displayName = "obj.push_rack", actionText = "Push", anchorCount = 2, mode = "Cumulative", holdTime = 14, assist = true },
+			},
+		},
+	},
+}
+
 return table.freeze(MISSIONS)

@@ -235,8 +235,10 @@ function HudController.new(): HudController
 			local kind = snap.exitKind
 			banner.pushUrgent({
 				key = "BannerWindowOpen",
-				text = if kind == "Drain" then T.BannerDrainEscape elseif kind == "Window" then T.BannerWindowEscape else T.BannerWindowOpen,
-				sub = if kind == "Drain"
+				text = if kind == "MouseHole" then T.BannerMouseHole elseif kind == "Drain" then T.BannerDrainEscape elseif kind == "Window" then T.BannerWindowEscape else T.BannerWindowOpen,
+				sub = if kind == "MouseHole"
+					then T.BannerMouseHoleSub
+					elseif kind == "Drain"
 					then T.BannerDrainEscapeSub
 					elseif kind == "Window" then T.BannerWindowEscapeSub
 					else T.BannerWindowOpenSub,

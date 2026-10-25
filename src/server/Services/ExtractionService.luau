@@ -122,6 +122,7 @@ end
 local DIRECT_BANNER: { [string]: { string } } = {
 	Window = { "BannerWindowEscape", "The window is open!", "Jump out of the window!" },
 	Drain = { "BannerDrainEscape", "The drain is open!", "Climb down the cable into the drain!" },
+	MouseHole = { "BannerMouseHole", "A SECRET mouse hole!", "Squeeze through the hole behind the shoe rack!" },
 }
 
 -- Exit unlocked (final step complete).

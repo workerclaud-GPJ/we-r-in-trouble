@@ -487,6 +487,75 @@ CollectionService:AddTag(zone, "ExitZone")
 local cam = part(drain, "DrainCameraPoint", Vector3.new(1, 1, 1), CFrame.lookAt(Vector3.new(c.X - 6, 16, c.Z + 26), c + Vector3.new(0, -3, 0)), Color3.new(1, 1, 1))
 invisible(cam)
 
+
+----------------------------------------------------------------------------
+-- SECRET: mouse hole behind the shoe rack (MidnightKitchen_MouseHole, 5 %)
+----------------------------------------------------------------------------
+
+local secret = Instance.new("Folder")
+secret.Name = "Secret"
+secret.Parent = root
+local RACK_SHIFT = Vector3.new(-14, 0, 0) -- pushed 14 studs west (clear of the table: z >= 105)
+local props = map:FindFirstChild("Props")
+local decor = map:FindFirstChild("Decor")
+local rackNames = { "ShoeRack_SideW", "ShoeRack_SideE", "ShoeRack_Shelf", "ShoeRack_Top", "Shoe_1", "Shoe_2", "Shoe_3" }
+local movedRack = Instance.new("Model")
+movedRack.Name = "RackPushedAside"
+movedRack.Parent = secret
+local function pushable(inst: Instance?)
+	if not inst then
+		return
+	end
+	-- original: hidden when the exit unlocks (ExtractionService.unlockDoors(RackPushed))
+	inst:SetAttribute("UnlockedBy", "RackPushed")
+	CollectionService:AddTag(inst, "LockedDoor")
+	-- copy shown at the pushed position
+	local copy = inst:Clone()
+	CollectionService:RemoveTag(copy, "LockedDoor")
+	copy:SetAttribute("UnlockedBy", nil)
+	for _, d in copy:GetDescendants() do
+		CollectionService:RemoveTag(d, "LockedDoor")
+	end
+	if copy:IsA("BasePart") then
+		copy.CFrame = copy.CFrame + RACK_SHIFT
+	elseif copy:IsA("Model") then
+		copy:PivotTo(copy:GetPivot() + RACK_SHIFT)
+	end
+	copy.Parent = movedRack
+end
+for _, n in rackNames do
+	pushable(props and props:FindFirstChild(n))
+end
+pushable(decor and decor:FindFirstChild("Shoes"))
+reveal(movedRack, "RackPushed")
+
+-- the mouse hole in the south wall (shows when the rack is pushed)
+local hole = Instance.new("Model")
+hole.Name = "MouseHole"
+hole.Parent = secret
+local hz = 121.6
+local arch = part(hole, "Hole", Vector3.new(0.4, 9, 9), CFrame.new(111, 3.2, hz) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(12, 10, 10))
+arch.Shape = Enum.PartType.Cylinder
+part(hole, "HoleFloor", Vector3.new(9, 0.2, 1), CFrame.new(111, 0.1, hz - 0.2), Color3.fromRGB(12, 10, 10))
+local trim = part(hole, "Trim", Vector3.new(0.3, 10, 10), CFrame.new(111, 3.2, hz + 0.1) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(140, 95, 60), Enum.Material.Wood)
+trim.Shape = Enum.PartType.Cylinder
+local glowH = part(hole, "Glow", Vector3.new(1, 1, 1), CFrame.new(111, 3, hz - 1), Color3.fromRGB(255, 220, 140))
+glowH.Transparency = 1
+local hl = Instance.new("PointLight")
+hl.Color = Color3.fromRGB(255, 210, 140)
+hl.Range = 16
+hl.Brightness = 2
+hl.Parent = glowH
+reveal(hole, "RackPushed")
+
+anchor(secret, "PushRack_A", "PushRack", Vector3.new(101, 2, 103.5), "A")
+anchor(secret, "PushRack_B", "PushRack", Vector3.new(121, 2, 103.5), "B")
+local mz = part(secret, "MouseHoleExitZone", Vector3.new(10, 8, 8), CFrame.new(111, 4, 117), Color3.fromRGB(80, 255, 120))
+invisible(mz)
+mz:SetAttribute("ExitId", "MouseHole")
+mz:SetAttribute("Open", false)
+CollectionService:AddTag(mz, "ExitZone")
+
 local rec = recording
 if rec then
 	pcall(function()
