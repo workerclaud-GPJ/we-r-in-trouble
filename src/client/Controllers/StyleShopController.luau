@@ -262,21 +262,37 @@ end
 -- double jump
 ----------------------------------------------------------------------------
 
+-- One key press fires JumpRequest more than once (on the ground, then again ~0.07 s later in the
+-- air, and every frame while held), so the air jump only counts a FRESH press: a request that
+-- comes MIN_PRESS_GAP after the previous one, at least MIN_AIR_TIME after leaving the ground.
+local MIN_PRESS_GAP = 0.15
+local MIN_AIR_TIME = 0.12
 local airJumpUsed = false
+local lastRequest = 0
+local leftGroundAt = 0
 local function hookCharacter(char: Model)
 	local hum = char:WaitForChild("Humanoid", 10)
 	if not (hum and hum:IsA("Humanoid")) then
 		return
 	end
 	airJumpUsed = false
-	hum.StateChanged:Connect(function(_, new: Enum.HumanoidStateType)
+	hum.StateChanged:Connect(function(old: Enum.HumanoidStateType, new: Enum.HumanoidStateType)
 		if new == Enum.HumanoidStateType.Landed or new == Enum.HumanoidStateType.Running then
 			airJumpUsed = false
+		elseif (new == Enum.HumanoidStateType.Jumping or new == Enum.HumanoidStateType.Freefall)
+			and old ~= Enum.HumanoidStateType.Jumping and old ~= Enum.HumanoidStateType.Freefall then
+			leftGroundAt = os.clock()
 		end
 	end)
 end
 
 local function onJumpRequest()
+	local t = os.clock()
+	local gap = t - lastRequest
+	lastRequest = t
+	if gap < MIN_PRESS_GAP or t - leftGroundAt < MIN_AIR_TIME then
+		return -- same press (or still holding) / just took off
+	end
 	if player:GetAttribute("DoubleJump") ~= true or player:GetAttribute(Attr.State) ~= Contract.State.Standing then
 		return
 	end
