@@ -49,14 +49,16 @@ function MultiHold.create(ctx: Common.Context): Common.Objective
 
 	local function computeRequired(): (number, number, boolean)
 		local active = PlayerStateService.activeCount()
-		local base = math.min(anchorCount, active)
+		-- needsPower: one hamster has to keep the generator running, so it never counts as a holder
+		local holders = if def.needsPower and active >= 2 then active - 1 else active
+		local base = math.min(anchorCount, holders)
 		local required = base
 		local override = false
 		if def.assist and base >= 3 and Workspace:GetServerTimeNow() - ctx.stepOpenedAt() >= I.MULTIHOLD_ASSIST_AFTER then
 			required = math.max(I.MULTIHOLD_ASSIST_MIN, base - 1)
 			override = true
 		end
-		if active <= 1 then
+		if holders <= 1 then
 			required = 1
 		end
 		return math.max(1, required), math.max(1, base), override
