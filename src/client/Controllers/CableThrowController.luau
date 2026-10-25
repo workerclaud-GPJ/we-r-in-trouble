@@ -249,7 +249,51 @@ function CableThrowController.release()
 	resultUntil = os.clock() + 2
 end
 
+-- glowing rings on the throw spots, only for a hamster holding a cable (so they know where to stand)
+local spotMarks: { [Model]: Part } = {}
+local function updateSpotMarks()
+	local rs = roundState()
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local show = rs ~= nil and rs:GetAttribute(Attr.CableThrow) == true and holdingRope()
+		and player:GetAttribute(Attr.State) == Contract.State.Standing and hrp ~= nil and hrp:IsA("BasePart")
+	local alive: { [Model]: boolean } = {}
+	if show and hrp and hrp:IsA("BasePart") then
+		local pulse = 0.25 + 0.25 * math.sin(os.clock() * 4)
+		for _, inst in CollectionService:GetTagged(Contract.Tag.CableRoute) do
+			local spot = inst:FindFirstChild("ThrowSpot")
+			if inst:IsA("Model") and inst:IsDescendantOf(Workspace) and inst:GetAttribute(Attr.Attached) ~= true
+				and spot and spot:IsA("BasePart") and (spot.Position - hrp.Position).Magnitude < 45 then
+				alive[inst] = true
+				local m = spotMarks[inst]
+				if not m or not m.Parent then
+					local d = math.min(spot.Size.X, spot.Size.Z)
+					local n = Instance.new("Part")
+					n.Name = "WRIT_CastSpot"
+					n.Anchored, n.CanCollide, n.CanQuery, n.CanTouch, n.CastShadow = true, false, false, false, false
+					n.Shape = Enum.PartType.Cylinder
+					n.Material = Enum.Material.Neon
+					n.Color = Color3.fromRGB(255, 210, 90)
+					n.Size = Vector3.new(0.15, d, d)
+					n.CFrame = CFrame.new(spot.Position - Vector3.new(0, spot.Size.Y / 2 - 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+					n.Parent = Workspace
+					m = n
+					spotMarks[inst] = n
+				end
+				(m :: Part).Transparency = pulse
+			end
+		end
+	end
+	for inst, m in spotMarks do
+		if not alive[inst] then
+			m:Destroy()
+			spotMarks[inst] = nil
+		end
+	end
+end
+
 local function update()
+	updateSpotMarks()
 	local r = findRoute()
 	if r ~= route then
 		route = r
@@ -361,6 +405,13 @@ function CableThrowController.start()
 	buildUi()
 	ContextActionService:BindAction(ACTION, function(_, state: Enum.UserInputState): Enum.ContextActionResult
 		if not route then
+			-- holding a cable but not on a cast spot: say where to stand
+			local rs = roundState()
+			if state == Enum.UserInputState.Begin and holdingRope() and rs and rs:GetAttribute(Attr.CableThrow) == true and result then
+				result.Text = "Stand on a glowing ring to cast"
+				result.TextColor3 = Color3.fromRGB(255, 230, 120)
+				resultUntil = os.clock() + 2
+			end
 			return Enum.ContextActionResult.Pass
 		end
 		if state == Enum.UserInputState.Begin then
