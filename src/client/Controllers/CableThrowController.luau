@@ -125,9 +125,10 @@ local function buildUi()
 	local g = make("ScreenGui", { Name = "WRIT_CableCast", ResetOnSpawn = false, IgnoreGuiInset = true, DisplayOrder = 5 }, player:WaitForChild("PlayerGui"))
 	local p = make("Frame", {
 		Name = "Panel",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -150),
-		Size = UDim2.fromOffset(340, 96),
+		-- right side, above the Dash / Drop buttons: keeps the centre (your hamster) clear
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -24, 1, -190),
+		Size = UDim2.fromOffset(300, 96),
 		BackgroundColor3 = Color3.fromRGB(25, 28, 40),
 		BackgroundTransparency = 0.15,
 		Visible = false,
@@ -189,7 +190,7 @@ local function buildUi()
 	local btn = make("TextButton", {
 		Name = "Cast",
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, 92, 0.5, 0),
+		Position = UDim2.new(0, -12, 0.5, 0), -- left of the meter
 		Size = UDim2.fromOffset(76, 76),
 		BackgroundColor3 = Color3.fromRGB(255, 200, 70),
 		Text = "CAST",
