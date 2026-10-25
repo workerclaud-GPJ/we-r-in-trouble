@@ -149,6 +149,7 @@ export type MissionDef = {
 	winCamera: string?, -- map part whose CFrame replaces WinCameraPoint for this scenario
 	startFlag: string?, -- MapService flag set before players spawn (e.g. "TableStart": spawn on the table)
 	cableThrow: boolean?, -- CableThrowService: Rope items can be cast at the map's cable hooks
+	explore: boolean?, -- HUD hides steps / markers / hints: players find the way out themselves (item book: B)
 	loot: LootTableDef?, -- this scenario's random loot (instead of Config.Loot[mapId]); fixedLoot counts toward budget
 }
 

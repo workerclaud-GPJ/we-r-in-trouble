@@ -217,7 +217,12 @@ function ObjectiveList.new(parent: Instance): ObjectiveList
 		end
 
 		local allDone = snap.exitOpen or (snap.stepCount > 0 and snap.stepIndex > snap.stepCount)
-		if allDone then
+		rowsHolder.Visible = not snap.explore
+		if snap.explore and not allDone then
+			header.Text = "Escape the kitchen!"
+			sub.Text = "Explore and find a way out · B = item book"
+			return
+		elseif allDone then
 			header.Text = T.AllStepsDone
 			sub.Text = T.FollowMarkers
 		else

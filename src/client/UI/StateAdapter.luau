@@ -53,6 +53,7 @@ local NAMES = table.freeze({
 	LastChance = A.LastChance,
 	ExitOpen = A.ExitOpen,
 	ExitKind = A.ExitKind,
+	Explore = "Explore",
 	CarrierArrivesAt = A.CarrierArrivesAt,
 	CarrierArrived = A.CarrierArrived,
 	DepartureRunning = A.DepartureRunning,
@@ -182,6 +183,7 @@ export type Snapshot = {
 
 	exitOpen: boolean,
 	exitKind: string?, -- nil = rescue carrier; "Window" | "Drain" = direct exit (escape scenarios)
+	explore: boolean, -- escape scenarios: no steps / objective markers / hints (find the way out yourself)
 	carrierArrivesAt: number?,
 	carrierArrived: boolean,
 	departureRunning: boolean,
@@ -357,8 +359,8 @@ local function objectivesFromAnchors(): { Objective }
 	local byId: { [string]: Objective } = {}
 	local list: { Objective } = {}
 	for _, anchor in CollectionService:GetTagged(NAMES.TagObjectiveAnchor) do
-		if not inMap(anchor) then
-			continue
+		if not inMap(anchor) or snap.explore then
+			continue -- explore rounds: no objective markers
 		end
 		local id = str(anchor, NAMES.AttrObjectiveId)
 		if not id then
@@ -506,6 +508,7 @@ function StateAdapter.snapshot(): Snapshot
 
 		exitOpen = bool(rs, NAMES.ExitOpen) or false,
 		exitKind = str(rs, NAMES.ExitKind),
+		explore = bool(rs, NAMES.Explore) == true,
 		carrierArrivesAt = num(rs, NAMES.CarrierArrivesAt),
 		carrierArrived = bool(rs, NAMES.CarrierArrived) or false,
 		departureRunning = bool(rs, NAMES.DepartureRunning) or false,
