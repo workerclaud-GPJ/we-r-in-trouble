@@ -92,13 +92,13 @@ local function flowBeam(from: Vector3, to: Vector3, width: number, flat: boolean
 	b.Width0 = width
 	b.Width1 = width
 	b.FaceCamera = not flat
-	b.LightEmission = 0.35
-	b.LightInfluence = 0.6
-	b.Color = ColorSequence.new(Color3.fromRGB(235, 248, 255), WATER)
+	b.LightEmission = 0.6
+	b.LightInfluence = 0.4
+	b.Color = ColorSequence.new(Color3.fromRGB(240, 250, 255), WATER)
 	b.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.55),
-		NumberSequenceKeypoint.new(0.5, 0.35),
-		NumberSequenceKeypoint.new(1, 0.55),
+		NumberSequenceKeypoint.new(0, 0.45),
+		NumberSequenceKeypoint.new(0.5, 0.2),
+		NumberSequenceKeypoint.new(1, 0.45),
 	})
 	b.Segments = 4
 	b.Enabled = false
