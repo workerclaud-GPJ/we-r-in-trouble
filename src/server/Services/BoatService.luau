@@ -46,6 +46,40 @@ local function volumePart(): BasePart?
 	return nil
 end
 
+-- running faucet streams (Switch model Kind "Faucet", parts named StreamZone): top = surface
+local function streamZones(): { BasePart }
+	local out: { BasePart } = {}
+	local now = workspace:GetServerTimeNow()
+	for _, inst in MapService.tagged("Switch") do
+		local u = inst:GetAttribute("ActiveUntil")
+		if inst:GetAttribute("Kind") == "Faucet" and typeof(u) == "number" and u > now then
+			for _, d in inst:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "StreamZone" then
+					table.insert(out, d)
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- surface Y of water under `pos` (flood or stream), or nil
+local function waterSurface(part: BasePart?, pos: Vector3): number?
+	local best: number? = nil
+	if part and Volume.over(part, pos) then
+		best = Volume.surfaceY(part)
+	end
+	for _, z in streamZones() do
+		if Volume.over(z, pos) then
+			local top = z.Position.Y + z.Size.Y / 2
+			if best == nil or top > best then
+				best = top
+			end
+		end
+	end
+	return best
+end
+
 local function setRiding(player: Player, on: boolean)
 	if (riding[player] == true) == on then
 		return
@@ -75,7 +109,10 @@ local function groundY(pos: Vector3, exclude: { Instance }): number?
 end
 
 local function step()
-	local part = if Config.Features.NewMission then volumePart() else nil
+	local part = volumePart()
+	if not Config.Features.NewMission then
+		return
+	end
 	local exclude: { Instance } = {}
 	for _, p in Players:GetPlayers() do
 		if p.Character then
@@ -89,8 +126,8 @@ local function step()
 	for _, player in Players:GetPlayers() do
 		local on = false
 		local hrp = PlayerStateService.getHRP(player)
-		if part and hrp and player:GetAttribute(Attr.Holding) == BOAT_ITEM and PlayerStateService.isStanding(player) and PlayerStateService.isParticipant(player) and Volume.over(part, hrp.Position) then
-			local surface = Volume.surfaceY(part)
+		local surface = hrp and waterSurface(part, hrp.Position)
+		if surface and hrp and player:GetAttribute(Attr.Holding) == BOAT_ITEM and PlayerStateService.isStanding(player) and PlayerStateService.isParticipant(player) then
 			local char = player.Character
 			local hum = char and char:FindFirstChildOfClass("Humanoid")
 			local feet = Geometry.footY(hrp, hum)

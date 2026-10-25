@@ -88,13 +88,52 @@ local function checkTouch()
 	end
 end
 
+-- Fans (Switch Kind "Fan"): while running, the Wind part lifts you up; blades spin.
+local spin = 0
+local function updateFans(dt: number)
+	local now = Workspace:GetServerTimeNow()
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	spin += dt
+	for _, inst in CollectionService:GetTagged("Switch") do
+		if inst:IsA("Model") and inst:GetAttribute("Kind") == "Fan" and inst:IsDescendantOf(Workspace) then
+			local u = inst:GetAttribute("ActiveUntil")
+			local on = typeof(u) == "number" and u > now
+			local blades = inst:FindFirstChild("Blades")
+			local hub = inst:FindFirstChild("Hub")
+			if on and blades and blades:IsA("Model") and hub and hub:IsA("BasePart") then
+				blades:PivotTo(hub.CFrame * CFrame.Angles(0, spin * 14, 0))
+			end
+			local wind = inst:FindFirstChild("Wind")
+			if on and wind and wind:IsA("BasePart") and hrp and hrp:IsA("BasePart") and player:GetAttribute(Attr.State) == Contract.State.Standing then
+				local lp = wind.CFrame:PointToObjectSpace(hrp.Position)
+				local h = wind.Size / 2
+				if math.abs(lp.X) <= h.X and math.abs(lp.Y) <= h.Y and math.abs(lp.Z) <= h.Z then
+					local v = hrp.AssemblyLinearVelocity
+					local lift = if lp.Y > h.Y - 4 then 4 else 30 -- hover near the top
+					if v.Y < lift then
+						hrp.AssemblyLinearVelocity = Vector3.new(v.X, lift, v.Z)
+					end
+					local hum = char and char:FindFirstChildOfClass("Humanoid")
+					if hum and hum:GetState() ~= Enum.HumanoidStateType.Freefall then
+						hum:ChangeState(Enum.HumanoidStateType.Freefall)
+					end
+				end
+			end
+		end
+	end
+end
+
 function LauncherController.start()
 	Remotes.get("Launch").OnClientEvent:Connect(function(p: any)
 		if typeof(p) == "table" and typeof(p.to) == "Vector3" then
 			launch(if typeof(p.from) == "Vector3" then p.from else nil, p.to, if typeof(p.time) == "number" then p.time else 1.2)
 		end
 	end)
-	RunService.Heartbeat:Connect(checkTouch)
+	RunService.Heartbeat:Connect(function(dt: number)
+		checkTouch()
+		updateFans(dt)
+	end)
 end
 
 return LauncherController
