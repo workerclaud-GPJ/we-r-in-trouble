@@ -34,6 +34,34 @@ local function volumePart(): BasePart?
 	return nil
 end
 
+-- running faucet streams (LauncherService switch Kind "Faucet"): StreamZone parts, Flow attr
+local function streamAt(pos: Vector3): (number?, Vector3)
+	local now = Workspace:GetServerTimeNow()
+	for _, inst in CollectionService:GetTagged("Switch") do
+		local u = inst:GetAttribute("ActiveUntil")
+		if inst:IsDescendantOf(Workspace) and inst:GetAttribute("Kind") == "Faucet" and typeof(u) == "number" and u > now then
+			for _, d in inst:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "StreamZone" and Volume.over(d, pos) then
+					local flow = d:GetAttribute("Flow")
+					return d.Position.Y + d.Size.Y / 2, if typeof(flow) == "Vector3" then flow else Vector3.zero
+				end
+			end
+		end
+	end
+	return nil, Vector3.zero
+end
+
+-- water surface under pos: flood volume or stream (higher wins), plus the stream flow
+local function surfaceAt(pos: Vector3): (number?, Vector3)
+	local part = volumePart()
+	local best: number? = if part and Volume.over(part, pos) then Volume.surfaceY(part) else nil
+	local s, flow = streamAt(pos)
+	if s and (best == nil or s > best) then
+		return s, flow
+	end
+	return best, Vector3.zero
+end
+
 local function makeBoat(): Model
 	local m = Instance.new("Model")
 	m.Name = "WRIT_BottlecapBoat"
@@ -79,20 +107,19 @@ local function placeBoat(m: Model, cf: CFrame)
 	end
 end
 
-local function update()
-	local part = volumePart()
+local function update(dt: number)
 	local t = os.clock()
 	-- boats for every rider
 	for _, p in Players:GetPlayers() do
 		local char = p.Character
 		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if part and p:GetAttribute("Boating") == true and hrp and hrp:IsA("BasePart") then
+		local surface = if hrp and hrp:IsA("BasePart") then surfaceAt(hrp.Position) else nil
+		if surface and p:GetAttribute("Boating") == true and hrp and hrp:IsA("BasePart") then
 			local m = boats[p]
 			if not m or not m.Parent then
 				m = makeBoat()
 				boats[p] = m
 			end
-			local surface = Volume.surfaceY(part)
 			local _, yaw, _ = hrp.CFrame:ToOrientation()
 			local bob = math.sin(t * 2.2 + p.UserId % 7) * 0.15
 			placeBoat(m, CFrame.new(hrp.Position.X, surface + bob, hrp.Position.Z) * CFrame.Angles(0, yaw, math.sin(t * 1.7) * 0.04))
@@ -112,8 +139,14 @@ local function update()
 	local char = player.Character
 	local hrp = char and char:FindFirstChild("HumanoidRootPart")
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if part and player:GetAttribute("Boating") == true and hrp and hrp:IsA("BasePart") and hum then
-		local surface = Volume.surfaceY(part)
+	local mySurface, myFlow = Vector3.zero.X, Vector3.zero
+	local s0: number? = nil
+	if hrp and hrp:IsA("BasePart") then
+		s0, myFlow = surfaceAt(hrp.Position)
+	end
+	if s0 and player:GetAttribute("Boating") == true and hrp and hrp:IsA("BasePart") and hum then
+		mySurface = s0
+		local surface = mySurface
 		local plat = platform
 		if not plat or not plat.Parent then
 			local n = Instance.new("Part")
@@ -132,6 +165,9 @@ local function update()
 			if feet < surface - 0.3 then
 				hrp.CFrame = hrp.CFrame + Vector3.new(0, surface - feet + 0.3, 0)
 			end
+		end
+		if myFlow.Magnitude > 0 then
+			hrp.CFrame = hrp.CFrame + myFlow * dt -- the stream carries the boat
 		end
 		(plat :: Part).CFrame = CFrame.new(hrp.Position.X, surface + 0.2 - 0.5, hrp.Position.Z)
 	elseif platform then
