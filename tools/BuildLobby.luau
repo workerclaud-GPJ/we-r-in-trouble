@@ -305,8 +305,8 @@ surfaceText(board, Enum.NormalId.Back, {
 P(lobby, "HintPost", Vector3.new(1.2, 9, 1.2), at(22, 4.5, -6), Color3.fromRGB(70, 45, 30), Enum.Material.Wood)
 local hint = P(lobby, "HintBoard", Vector3.new(24, 7, 0.8), at(22, 11, -6) * CFrame.Angles(0, math.rad(-15), 0), Color3.fromRGB(70, 45, 30), Enum.Material.Wood)
 surfaceText(hint, Enum.NormalId.Back, {
-	{ name = "Hint", text = "Walk into a hamster house to play! 🐹", size = 34, color = Color3.new(1, 1, 1) },
-	{ name = "HintTh", text = "เดินเข้าบ้านหนูเพื่อเริ่มเล่น", size = 30, color = Color3.fromRGB(255, 230, 160) },
+	{ name = "Hint", text = "Walk into a hamster house to play! 🐹", size = 26, color = Color3.new(1, 1, 1) },
+	{ name = "HintTh", text = "เดินเข้าบ้านหนูเพื่อเริ่มเล่น", size = 26, color = Color3.fromRGB(255, 230, 160) },
 }, 20)
 for _, d in hint:GetDescendants() do
 	if d:IsA("TextLabel") and d.Name == "HintTh" then
