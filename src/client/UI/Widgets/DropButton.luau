@@ -36,7 +36,7 @@ local TOUCH_Y_LARGE = -220
 local DESKTOP_Y = -28
 local X = -24 - DASH_SIZE - 14
 local REFRESH = 0.1
-local ICON = "🫳"
+local ICON = "⬇"
 
 function DropButton.new(parent: Instance): DropButton
 	local player = Players.LocalPlayer

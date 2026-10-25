@@ -23,6 +23,7 @@ local RoundService = require(Services.RoundService)
 local DashService = require(Services.DashService)
 local RouteToppleService = require(Services.RouteToppleService)
 local CableThrowService = require(Services.CableThrowService)
+local BoatService = require(Services.BoatService)
 
 MapService.ensureLobby()
 HoldService.start()
@@ -34,4 +35,5 @@ DebugCommands.start()
 DashService.start()
 RouteToppleService.start() -- boot check only; no-op while Config.Features.RouteTopple is false
 CableThrowService.start()
+BoatService.start() -- bottle-cap boat (Features.NewMission, Flood water)
 RoundService.start()
