@@ -32,4 +32,7 @@ return table.freeze({
 		"MidnightKitchen_CableWindow", -- 2: start on the table, cast a cable to the counter, scissors pry the window
 		"MidnightKitchen_Drain", -- 3: scissors pry the drain grate, cable down the drain
 	},
+	-- rare secret escape: picked instead of the normal pool with this chance (never twice in a row)
+	SECRET_SCENARIO_ID = "MidnightKitchen_MouseHole",
+	SECRET_CHANCE = 0.05,
 })

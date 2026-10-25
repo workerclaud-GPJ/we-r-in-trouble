@@ -290,6 +290,12 @@ local function pickMission(): Types.MissionDef?
 		lastScenarioId = forced.id
 		return forced
 	end
+	local secret = R.SECRET_SCENARIO_ID and Config.Missions[R.SECRET_SCENARIO_ID]
+	if secret and lastScenarioId ~= secret.id and rng:NextNumber() < (R.SECRET_CHANCE or 0) then
+		lastScenarioId = secret.id
+		print("[Round] SECRET scenario rolled!")
+		return secret
+	end
 	local pool: { string } = {}
 	for _, id in R.SCENARIO_IDS do
 		if Config.Missions[id] and (id ~= lastScenarioId or #R.SCENARIO_IDS == 1) then
@@ -383,7 +389,7 @@ local function runMatch(candidates: { Player })
 	MissionService.start(mission, startedAt)
 	DisasterService.start(disaster, startedAt)
 	local firstStep = mission.steps[1]
-	local briefSub = if mission.explore then "Find your own way out · press B for the item book" elseif firstStep then firstStep.displayName else nil
+	local briefSub = if mission.id == R.SECRET_SCENARIO_ID then "🐭 Something is squeaking behind the shoe rack…" elseif mission.explore then "Find your own way out · press B for the item book" elseif firstStep then firstStep.displayName else nil
 	Hud.banner("Briefing", mission.displayName, briefSub, "Good", R.BRIEFING_TIME)
 
 	-- match loop
@@ -454,6 +460,10 @@ function RoundService.setNextScenario(key: string): string?
 		return nextScenarioId
 	end
 	local found: string? = nil
+	if R.SECRET_SCENARIO_ID and (string.lower(key) == "secret" or string.find(string.lower(R.SECRET_SCENARIO_ID), string.lower(key), 1, true)) then
+		nextScenarioId = R.SECRET_SCENARIO_ID
+		return nextScenarioId
+	end
 	for _, id in R.SCENARIO_IDS do
 		if string.lower(id) == string.lower(key) then
 			found = id

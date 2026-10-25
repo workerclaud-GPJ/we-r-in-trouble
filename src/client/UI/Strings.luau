@@ -19,6 +19,7 @@ local REASON: { [string]: string } = {
 	Escaped = "The rescue carrier got you out!",
 	EscapedWindow = "You jumped out of the window!",
 	EscapedDrain = "You escaped through the drain!",
+	EscapedMouseHole = "SECRET ESCAPE! You found the mouse hole!",
 	Collapse = "Time ran out. The kitchen collapsed!",
 	Wipe = "Everyone got dizzy at the same time.",
 	NoPlayers = "Not enough hamsters left.",
@@ -79,6 +80,7 @@ local OBJECTIVE: { [string]: string } = {
 	["obj.pry_grate"] = "Pry the grate",
 	["obj.lift_grate"] = "Lift the grate",
 	["obj.tie_cable"] = "Tie the cable",
+	["obj.push_rack"] = "Push the shoe rack",
 }
 
 Strings.Text = table.freeze({
@@ -153,6 +155,8 @@ Strings.Text = table.freeze({
 	BannerWindowEscapeSub = "Jump out of the window!",
 	BannerDrainEscape = "The drain is open!",
 	BannerDrainEscapeSub = "Climb down the cable into the drain!",
+	BannerMouseHole = "A SECRET mouse hole!",
+	BannerMouseHoleSub = "Squeeze through the hole behind the shoe rack!",
 	BannerCarrier = "The rescue carrier is here!",
 	BannerCarrierSub = "Everyone get inside!",
 	BannerCritical = "It's getting worse!",
