@@ -221,7 +221,8 @@ local function onImpact(payload: any)
 		Sound.play("FallWhistle", pos + Vector3.new(0, dropHeight * 0.5, 0))
 	end
 
-	-- debris (Art §3.2): random spin, +180° while falling (Quad In), bounce, dust, fade
+	-- debris (Art §3.2): random spin, +180° while falling (Quad In, lands exactly on the telegraph),
+	-- then local physics takes over (bounce / roll / tumble), dust, fade
 	local model = makeProp(prop)
 	local spin = CFrame.Angles(math.random() * 6.28, math.random() * 6.28, math.random() * 6.28)
 	local _, size = model:GetBoundingBox()
@@ -245,12 +246,41 @@ local function onImpact(payload: any)
 		if rp and (rp - pos).Magnitude <= NEAR_SHAKE_RADIUS then
 			EffectsController.shake(0.12, 0.2)
 		end
-		driver.Value = endCf + Vector3.new(0, 0.6, 0)
-		local bounce = TweenService:Create(driver, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Value = endCf })
-		bounce.Completed:Connect(function()
-			driver:Destroy()
-		end)
-		bounce:Play()
+		driver:Destroy()
+		-- hand the prop to real (local) physics: it bounces, rolls and tumbles where it landed
+		-- instead of freezing. Items collision group: the world and items only, never players.
+		local parts: { BasePart } = {}
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				table.insert(parts, d)
+			end
+		end
+		local root = parts[1]
+		if not root or not model.Parent then
+			return
+		end
+		model:PivotTo(endCf + Vector3.new(0, 0.4, 0))
+		for i, part in parts do
+			if i > 1 then
+				local weld = Instance.new("WeldConstraint")
+				weld.Part0 = root
+				weld.Part1 = part
+				weld.Parent = root
+			end
+		end
+		for _, part in parts do
+			part.CanQuery = false
+			part.CanTouch = false
+			pcall(function()
+				part.CollisionGroup = Contract.CollisionGroup.Items
+			end)
+			part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.35, 0.45, 1, 1)
+			part.CanCollide = true
+			part.Anchored = false
+		end
+		local rng = Random.new()
+		root.AssemblyLinearVelocity = Vector3.new(rng:NextNumber(-7, 7), rng:NextNumber(9, 15), rng:NextNumber(-7, 7))
+		root.AssemblyAngularVelocity = Vector3.new(rng:NextNumber(-9, 9), rng:NextNumber(-9, 9), rng:NextNumber(-9, 9))
 	end)
 	fall:Play()
 	fadeAndDestroy(model, telegraph + math.max(0, lifetime - FADE_TIME))
