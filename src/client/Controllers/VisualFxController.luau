@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Contract = require(Shared.Contract)
+local Sound = require(script.Parent.Fx.Sound)
 
 local ENABLED = true
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -62,7 +63,7 @@ end
 -- faucet water
 ----------------------------------------------------------------------------
 
-type WaterFx = { parts: { BasePart }, beams: { Beam }, emitters: { ParticleEmitter } }
+type WaterFx = { parts: { BasePart }, beams: { Beam }, emitters: { ParticleEmitter }, soundAt: Part?, sound: Sound? }
 local water: WaterFx? = nil
 
 -- a beam lying along `from` -> `to`, `width` wide; flat = lies on the floor (else faces the camera)
@@ -149,7 +150,7 @@ local function buildWater(map: Instance)
 	if not w then
 		return
 	end
-	local fx: WaterFx = { parts = {}, beams = {}, emitters = {} }
+	local fx: WaterFx = { parts = {}, beams = {}, emitters = {}, soundAt = nil, sound = nil }
 	local function part(name: string): BasePart?
 		local p = w:FindFirstChild(name)
 		return if p and p:IsA("BasePart") then p else nil
@@ -162,6 +163,9 @@ local function buildWater(map: Instance)
 			local top = p.Position + Vector3.new(0, p.Size.Y / 2, 0)
 			local bottom = p.Position - Vector3.new(0, p.Size.Y / 2, 0)
 			table.insert(fx.beams, flowBeam(top, bottom, math.max(p.Size.X, p.Size.Z) * 0.95, false, 4))
+			if name == "Waterfall" then
+				fx.soundAt = holder("WaterSound", CFrame.new(bottom + Vector3.new(0, 2, 0)))
+			end
 			for _, e in splash(bottom + Vector3.new(0, 0.3, 0), if name == "Spout" then 0.5 else 1, if name == "Spout" then 18 else 30) do
 				table.insert(fx.emitters, e)
 			end
@@ -211,6 +215,13 @@ local function updateWater()
 	end
 	for _, e in fx.emitters do
 		e.Enabled = on
+	end
+	-- running-water loop (3D, at the foot of the waterfall) while the tap is on
+	if on and not fx.sound and fx.soundAt then
+		fx.sound = Sound.loop("WaterRun", fx.soundAt)
+	elseif not on and fx.sound then
+		fx.sound:Destroy()
+		fx.sound = nil
 	end
 end
 
