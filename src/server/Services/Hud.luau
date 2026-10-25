@@ -27,4 +27,10 @@ function Hud.banner(key: string, text: string, sub: string?, color: string?, dur
 	end
 end
 
+-- One player only (hints for the presser: "too blunt", "turn off the tap first", ...).
+function Hud.bannerTo(player: Player, key: string, text: string, sub: string?, color: string?, duration: number?)
+	local payload: Remotes.BannerPayload = { key = key, text = text, sub = sub, color = color, duration = duration }
+	Remotes.get("HudBanner"):FireClient(player, payload)
+end
+
 return Hud

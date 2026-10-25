@@ -7,6 +7,7 @@
 	  🧽 Kitchen sponge on the south end of the east counter: jump on it → bounce along the
 	     counter to the sink corner (a shortcut between places you can already walk to).
 	  🚰 Faucet: turn on → water runs across the floor; ride the stream in a bottle cap.
+	  🪨 Knife sharpener on the floor south of the table: sharpen the scissors before prying.
 	  🌀 Standing fan on the floor east of the table: 25 s of sideways wind along the floor
 	     (under the table, toward the west wall). Never lifts anyone: only speeds you up.
 ]]
@@ -59,7 +60,7 @@ glow.Transparency = 0.3
 
 -- kitchen sponge trampoline (yellow foam + green scrub), east counter south end (top Y 45).
 -- Shortcut only: both ends are on the counters, reachable on foot.
-local spongeCF = CFrame.new(148, 46.2, 76)
+local spongeCF = CFrame.new(148, 46.2, 66) -- clear of the Scn_CounterE item spot (150, 45, 80)
 local sponge = P("SpongeLauncher", Vector3.new(8, 2.4, 8), spongeCF, Color3.fromRGB(250, 220, 80), Enum.Material.Fabric, true)
 sponge:SetAttribute("Mode", "Touch")
 sponge:SetAttribute("Target", Vector3.new(100, 45.05, 14)) -- north counter, by the faucet
@@ -76,8 +77,10 @@ faucet:SetAttribute("Kind", "Faucet")
 faucet:SetAttribute("Action", "Turn on")
 faucet:SetAttribute("Object", "Faucet")
 faucet:SetAttribute("Flag", "FaucetOn")
+faucet:SetAttribute("ActionOff", "Turn off")
 faucet:SetAttribute("Banner", "The tap is running!")
 faucet:SetAttribute("BannerSub", "Water is flowing across the floor…")
+faucet:SetAttribute("BannerOff", "🚰 The tap is off")
 CollectionService:AddTag(faucet, "Switch")
 faucet.Parent = f
 local fp = P("PromptPart", Vector3.new(2, 2, 2), CFrame.new(96, 47, 25), Color3.new(1, 1, 1))
@@ -98,8 +101,11 @@ w("Overflow", Vector3.new(10, 0.3, 2), CFrame.new(62, 45.2, 29.5))
 w("Waterfall", Vector3.new(6, 45, 0.5), CFrame.new(62, 22.5, 30.6))
 w("StreamA_Visual", Vector3.new(7, 0.25, 58), CFrame.new(62, 0.15, 60))
 w("StreamB_Visual", Vector3.new(112, 0.25, 8), CFrame.new(96, 0.15, 88))
-water:SetAttribute("RevealedBy", "FaucetOn")
-CollectionService:AddTag(water, "FlagReveal")
+-- a third arm runs east along the cabinet into the drain under the step chair (drain round: the
+-- tap is on from the start and must be turned off before tying the cable)
+w("StreamC_Visual", Vector3.new(48, 0.25, 3), CFrame.new(86, 0.15, 34.5))
+w("DrainSplash", Vector3.new(5, 2.5, 5), CFrame.new(110, 1.2, 37))
+-- shown / hidden by LauncherService (faucet toggles on and off), not by a flag
 -- invisible water zones (top = surface): A runs south (+Z), B runs east (+X)
 local function zone(name: string, size: Vector3, cf: CFrame, flow: Vector3)
 	local z = P("StreamZone", size, cf, blue)
@@ -109,6 +115,32 @@ local function zone(name: string, size: Vector3, cf: CFrame, flow: Vector3)
 end
 zone("StreamZone", Vector3.new(7, 2.2, 58), CFrame.new(62, 1.1, 60), Vector3.new(0, 0, 9))
 zone("StreamZone", Vector3.new(112, 2.2, 8), CFrame.new(96, 1.1, 88), Vector3.new(9, 0, 0))
+
+-- 🪨 Knife sharpener (floor south of the table): hold "Sharpen" while holding the scissors →
+-- flag ScissorsSharp (blunt scissors cannot pry the window latch or the drain grate). One-shot.
+local sharp = Instance.new("Model")
+sharp.Name = "Sharpener"
+sharp:SetAttribute("Kind", "Sharpener")
+sharp:SetAttribute("Action", "Sharpen")
+sharp:SetAttribute("Object", "Knife sharpener")
+sharp:SetAttribute("HoldDuration", 2)
+sharp:SetAttribute("RequiresCapability", "Pry")
+sharp:SetAttribute("MissingHint", "🪨 ต้องถือของมีคมมาลับ · Bring something sharp to sharpen")
+sharp:SetAttribute("Flag", "ScissorsSharp")
+sharp:SetAttribute("Banner", "✂️ กรรไกรคมแล้ว! · Scissors sharpened!")
+CollectionService:AddTag(sharp, "Switch")
+sharp.Parent = f
+local sbase = Vector3.new(60, 0, 115)
+local function spart(name: string, size: Vector3, cf: CFrame, c: Color3, mat: Enum.Material?, collide: boolean?): Part
+	local p = P(name, size, cf, c, mat, collide)
+	p.Parent = sharp
+	return p
+end
+spart("Base", Vector3.new(8, 1.2, 4), CFrame.new(sbase + Vector3.new(0, 0.6, 0)), Color3.fromRGB(150, 100, 60), Enum.Material.Wood, true)
+spart("Stone", Vector3.new(6.4, 1.4, 2.6), CFrame.new(sbase + Vector3.new(0, 1.9, 0)), Color3.fromRGB(120, 125, 135), Enum.Material.Slate, true)
+spart("StoneTop", Vector3.new(6.4, 0.2, 2.6), CFrame.new(sbase + Vector3.new(0, 2.7, 0)), Color3.fromRGB(80, 150, 200), Enum.Material.Slate)
+local spp = spart("PromptPart", Vector3.new(2, 2, 2), CFrame.new(sbase + Vector3.new(0, 3, 0)), Color3.new(1, 1, 1))
+spp.Transparency = 1
 
 -- 🌀 Standing fan (floor east of the table, facing west): "Turn on" → 25 s of wind blowing
 -- along the floor under the table (Wind attr Push). It never lifts: only speeds you up.
@@ -153,5 +185,5 @@ local wind = fpart("Wind", Vector3.new(92, 12, 10), CFrame.new(76, 6, 72), Color
 wind.Transparency = 1
 wind:SetAttribute("Push", Vector3.new(-14, 0, 0))
 
-print("[AddSceneProps] done: toaster, sponge, faucet, fan")
+print("[AddSceneProps] done: toaster, sponge, faucet, fan, sharpener")
 return true
