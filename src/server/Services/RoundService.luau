@@ -266,6 +266,7 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 	scope:clean()
 	MapService.unloadMap()
 	RoundState.clearMatch()
+	RoundState.set("Explore", nil)
 	for _, player in Players:GetPlayers() do
 		PlayerStateService.setLobby(player)
 		markActive(player)
@@ -318,6 +319,7 @@ local function applyScenario(mission: Types.MissionDef, map: Model)
 		MapService.setFlag(mission.startFlag) -- e.g. TableStart: the table spawn pads win
 	end
 	CableThrowService.begin(mission)
+	RoundState.set("Explore", if mission.explore then true else nil)
 	RoundState.set(Attr.ExitKind, mission.exitKind)
 	RoundState.set(Attr.ScenarioId, mission.id)
 	print(`[Round] scenario {mission.id} (exit {mission.exitKind or "Carrier"})`)
@@ -379,7 +381,8 @@ local function runMatch(candidates: { Player })
 	MissionService.start(mission, startedAt)
 	DisasterService.start(disaster, startedAt)
 	local firstStep = mission.steps[1]
-	Hud.banner("Briefing", mission.displayName, if firstStep then firstStep.displayName else nil, "Good", R.BRIEFING_TIME)
+	local briefSub = if mission.explore then "Find your own way out · press B for the item book" elseif firstStep then firstStep.displayName else nil
+	Hud.banner("Briefing", mission.displayName, briefSub, "Good", R.BRIEFING_TIME)
 
 	-- match loop
 	local result: Result

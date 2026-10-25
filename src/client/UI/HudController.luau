@@ -140,6 +140,9 @@ function HudController.new(): HudController
 	local warningSeenAt: number? = nil -- wait briefly for DisasterName to replicate
 
 	local function stepSub(snap: Snapshot): string
+		if snap.explore then
+			return "Something changed… keep exploring!"
+		end
 		local header = UIUtil.format(T.StepHeader, { i = snap.stepIndex, n = math.max(snap.stepCount, 1) })
 		return if snap.stepName then header .. ": " .. Strings.objective(snap.stepName) else header
 	end
@@ -156,6 +159,9 @@ function HudController.new(): HudController
 			return
 		end
 		hintPendingSince = nil
+		if snap.explore then
+			return -- explore rounds: no step hints
+		end
 		local text, sub = Strings.stepHint(snap.stepName)
 		banner.push({
 			key = "StepHint" .. snap.stepIndex,
@@ -202,7 +208,7 @@ function HudController.new(): HudController
 			banner.push({
 				key = "Briefing",
 				text = if snap.missionName then Strings.objective(snap.missionName) else T.MissionFallback,
-				sub = stepSub(snap),
+				sub = if snap.explore then "Find your own way out · press B for the item book" else stepSub(snap),
 				color = Style.Color.Accent,
 				duration = StateAdapter.Tuning.briefingTime,
 			})

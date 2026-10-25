@@ -39,7 +39,7 @@ local ITEMS: { [string]: Types.ItemDef } = {
 	},
 	Bottlecap = {
 		id = "Bottlecap",
-		displayName = "Bottle Cap (boat)",
+		displayName = "Bottle Cap",
 		size = "Small",
 		model = "Bottlecap",
 		capabilities = { "Contain" },
