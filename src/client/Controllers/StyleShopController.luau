@@ -4,7 +4,7 @@
 	  🛒 Shop button (lobby only, under the Style button) shows your coins; the panel lists the
 	  styles (Config.Styles) with Buy / Equip / Equipped. Coins come from playing matches.
 	  Double jump: styles with doubleJump get one extra jump in the air (client-owned character).
-	  "+50 🪙" toast when a match reward arrives (attribute LastReward).
+	  "+50 💰" toast when a match reward arrives (attribute LastReward).
 ]]
 
 local Players = game:GetService("Players")
@@ -94,9 +94,9 @@ local function refresh()
 		elseif owned[id] then
 			text, color, action = "Equip", Color3.fromRGB(80, 150, 235), "equip"
 		elseif coins() >= def.price then
-			text, color, action = `Buy {def.price} 🪙`, Color3.fromRGB(240, 180, 60), "buy"
+			text, color, action = `Buy {def.price} 💰`, Color3.fromRGB(240, 180, 60), "buy"
 		else
-			text, color, action = `{def.price} 🪙`, Color3.fromRGB(150, 150, 150), nil
+			text, color, action = `{def.price} 💰`, Color3.fromRGB(150, 150, 150), nil
 		end
 		local b = make("TextButton", {
 			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(108, 40),
@@ -114,7 +114,7 @@ local function refresh()
 		end)
 	end
 	if coinsLabel then
-		coinsLabel.Text = `🪙 {coins()} coins  ·  escape = +{S.ESCAPE_REWARD}, play = +{S.PLAY_REWARD}`
+		coinsLabel.Text = `💰 {coins()} coins  ·  escape = +{S.ESCAPE_REWARD}, play = +{S.PLAY_REWARD}`
 	end
 end
 
@@ -237,7 +237,7 @@ function StyleShopController.start()
 		local r = player:GetAttribute("LastReward")
 		local t = toast
 		if typeof(r) == "number" and t then
-			t.Text = `+{r} 🪙`
+			t.Text = `+{r} 💰`
 			t.Visible = true
 			task.delay(3, function()
 				t.Visible = false
@@ -255,7 +255,7 @@ function StyleShopController.start()
 		local b = shopBtn
 		if b then
 			b.Visible = inLobby
-			b.Text = `🛒 Shop · {coins()} 🪙`
+			b.Text = `🛒 Shop · {coins()} 💰`
 		end
 		if panel and panel.Visible and not inLobby then
 			panel.Visible = false
