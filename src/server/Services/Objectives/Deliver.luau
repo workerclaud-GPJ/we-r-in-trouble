@@ -8,6 +8,13 @@
 	with that capability is accepted (ItemService.consumeCapability); the itemType path is unchanged.
 	Features.CapabilitySpawn: items come from LootService (owner "Loot") at round start, so
 	open() does not spawn; count is capped by the matching items present in the map.
+	Escape-scenario extras:
+	  keepItem       the held item is a tool (scissors): each press counts once and keeps the item;
+	                 count = clamp(teamCount, minCount, maxCount) e.g. one screw per hamster.
+	  holdDuration   prompt hold time per press.
+	  requiresFlag   MapService flag needed first (e.g. "ScissorsSharp"), else blockedHint.
+	  blockedWhileOn Switch Kind that must be off (e.g. "Faucet"), else blockedHint.
+	  progressBanner team banner per press while not done ("{n}" / "{count}").
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +25,9 @@ local Config = require(Shared.Config)
 
 local PlayerStateService = require(script.Parent.Parent.PlayerStateService)
 local ItemService = require(script.Parent.Parent.ItemService)
+local MapService = require(script.Parent.Parent.MapService)
+local LauncherService = require(script.Parent.Parent.LauncherService)
+local Hud = require(script.Parent.Parent.Hud)
 local Common = require(script.Parent.Common)
 
 local Attr = Contract.Attr
@@ -53,8 +63,24 @@ function Deliver.create(ctx: Common.Context): Common.Objective
 		if not ctx.isActive() or not Common.canInteract(player, part) then
 			return
 		end
+		local held = player:GetAttribute(Attr.Holding)
+		local holdsRight = typeof(held) == "string" and held ~= ""
+			and (if capability then ItemService.hasCapability(held, capability) else held == itemType)
+		-- requirement hints only for a hamster holding the right item (others just get nothing)
+		if holdsRight and def.requiresFlag and not MapService.hasFlag(def.requiresFlag) then
+			Hud.bannerTo(player, "Blocked" .. def.id, def.blockedHint or "Not yet…", nil, "Warn", 2.5)
+			return
+		end
+		if holdsRight and def.blockedWhileOn and LauncherService.isOn(def.blockedWhileOn) then
+			Hud.bannerTo(player, "Blocked" .. def.id, def.blockedHint or "Not yet…", nil, "Warn", 2.5)
+			return
+		end
 		local firstPicker = ItemService.firstPickerOf(player)
-		if capability then
+		if def.keepItem then
+			if not holdsRight then
+				return
+			end
+		elseif capability then
 			if not ItemService.consumeCapability(player, capability) then
 				return
 			end
@@ -67,11 +93,18 @@ function Deliver.create(ctx: Common.Context): Common.Objective
 			ctx.credit(firstPicker)
 		end
 		publish()
+		if def.progressBanner and delivered < count then
+			local text = string.gsub(string.gsub(def.progressBanner, "{n}", tostring(delivered)), "{count}", tostring(count))
+			Hud.banner("Progress" .. def.id, text, nil, "Good", 1.6)
+		end
 		checkDone()
 	end
 
 	for _, anchor in ctx.anchors do
 		local prompt, part = Common.ensurePrompt(anchor, def.actionText or "Insert", nil)
+		if prompt and def.holdDuration then
+			prompt.HoldDuration = def.holdDuration
+		end
 		if prompt and part then
 			table.insert(conns, prompt.Triggered:Connect(function(player: Player)
 				onInsert(player, part)
@@ -87,7 +120,9 @@ function Deliver.create(ctx: Common.Context): Common.Objective
 				count = math.max(1, def.count)
 			end
 			local spawned: number
-			if lootSpawned then
+			if def.keepItem then
+				spawned = count -- a tool is reused for every press: never spawn extra copies
+			elseif lootSpawned then
 				spawned = if capability then ItemService.countCapability(capability) else ItemService.countType(itemType)
 				if spawned < count and (capability == nil or ItemService.hasCapability(itemType, capability)) then
 					-- safety net (no Config.Loot entry for the map, LootService failed): legacy spawn tops

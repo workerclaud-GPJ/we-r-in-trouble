@@ -104,17 +104,22 @@ MISSIONS.MidnightKitchen_CallForHelp_Table = {
 	steps = {
 		{
 			id = "PowerUp",
-			displayName = "Power up the charger",
+			displayName = "Put batteries in the charger",
 			objectives = {
-				{ id = "RunWheel", kind = "Repair", displayName = "obj.run_wheel", holdAnim = "RunInWheel", actionText = "Run", duration = 45, maxStack = 2 },
 				{ id = "DeliverBatteries", kind = "Deliver", displayName = "obj.deliver_batteries", actionText = "Insert", itemType = "Battery", minCount = 1, maxCount = 3 },
 			},
 		},
 		{
+			-- teamwork: the radio only has power while someone keeps running in the wheel
+			-- (MultiHold needsPower; ignored when solo)
 			id = "CallForHelp",
 			displayName = "Call for help",
 			objectives = {
-				{ id = "CallForHelp", kind = "MultiHold", displayName = "obj.call_for_help", holdAnim = "ShoutRadio", actionText = "Shout", anchorCount = 4, mode = "Cumulative", holdTime = 45, assist = true },
+				{ id = "RunWheel", kind = "Repair", displayName = "obj.run_wheel", holdAnim = "RunInWheel", actionText = "Run", sustain = true, optional = true },
+				{
+					id = "CallForHelp", kind = "MultiHold", displayName = "obj.call_for_help", holdAnim = "ShoutRadio", actionText = "Shout", anchorCount = 4, mode = "Cumulative", holdTime = 45, assist = true,
+					needsPower = "RunWheel", noPowerHint = "📻 วิทยุไม่มีไฟ! ต้องมีคนวิ่งวงล้อไว้ · Someone must run the wheel!",
+				},
 			},
 		},
 	},
@@ -153,7 +158,13 @@ MISSIONS.MidnightKitchen_CableWindow = {
 			id = "PryWindow",
 			displayName = "Pry the window latch",
 			objectives = {
-				{ id = "PryLatch", kind = "Deliver", displayName = "obj.pry_latch", actionText = "Pry", capability = "Pry", itemType = "Scissors", count = 1, setsFlag = "LatchOpen" },
+				-- one screw per hamster (1-4), the scissors are a tool (kept); they must be sharpened first
+				{
+					id = "PryLatch", kind = "Deliver", displayName = "obj.pry_latch", actionText = "Pry screw", capability = "Pry", itemType = "Scissors",
+					minCount = 1, maxCount = 4, keepItem = true, holdDuration = 2.5, setsFlag = "LatchOpen",
+					requiresFlag = "ScissorsSharp", blockedHint = "✂️ กรรไกรทื่อเกินไป! หาที่ลับมีดก่อน · Too blunt, find a sharpener",
+					progressBanner = "🔩 Screw {n}/{count} out!",
+				},
 			},
 		},
 		{
@@ -180,6 +191,7 @@ MISSIONS.MidnightKitchen_Drain = {
 	exitKind = "Drain",
 	exitId = "Drain",
 	winCamera = "DrainCameraPoint",
+	switchesOn = { "Faucet" }, -- the tap is running into the drain from the start
 	hideParts = NO_COOKBOOK_RAMP,
 	fixedLoot = {
 		{ itemType = "Scissors", spawn = FLOOR_SPOTS },
@@ -191,7 +203,11 @@ MISSIONS.MidnightKitchen_Drain = {
 			id = "PryGrate",
 			displayName = "Pry the drain grate",
 			objectives = {
-				{ id = "PryGrate", kind = "Deliver", displayName = "obj.pry_grate", actionText = "Pry", capability = "Pry", itemType = "Scissors", count = 1, setsFlag = "GrateLoose" },
+				{
+					id = "PryGrate", kind = "Deliver", displayName = "obj.pry_grate", actionText = "Pry", capability = "Pry", itemType = "Scissors", count = 1, keepItem = true,
+					holdDuration = 1.5, setsFlag = "GrateLoose",
+					requiresFlag = "ScissorsSharp", blockedHint = "✂️ กรรไกรทื่อเกินไป! หาที่ลับมีดก่อน · Too blunt, find a sharpener",
+				},
 			},
 		},
 		{
@@ -205,7 +221,10 @@ MISSIONS.MidnightKitchen_Drain = {
 			id = "TieCable",
 			displayName = "Tie the cable to the drain",
 			objectives = {
-				{ id = "TieDrainCable", kind = "Deliver", displayName = "obj.tie_cable", actionText = "Tie cable", capability = "Rope", itemType = "ChargerCable", count = 1 },
+				{
+					id = "TieDrainCable", kind = "Deliver", displayName = "obj.tie_cable", actionText = "Tie cable", capability = "Rope", itemType = "ChargerCable", count = 1,
+					blockedWhileOn = "Faucet", blockedHint = "🚰 น้ำไหลลงท่อแรงมาก! ปิดก๊อกน้ำก่อน · Turn off the tap first!",
+				},
 			},
 		},
 	},

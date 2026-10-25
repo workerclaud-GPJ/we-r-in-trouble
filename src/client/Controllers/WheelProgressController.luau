@@ -40,7 +40,7 @@ end
 local function makeBar(part: BasePart): Bar
 	local g = Instance.new("BillboardGui")
 	g.Name = "WRIT_WheelProgress"
-	g.Size = UDim2.fromOffset(180, 46)
+	g.Size = UDim2.fromOffset(260, 46)
 	g.StudsOffsetWorldSpace = Vector3.new(0, 12, 0)
 	g.AlwaysOnTop = true
 	g.LightInfluence = 0
@@ -94,7 +94,8 @@ local function update()
 				local pr = a:GetAttribute(Attr.Progress)
 				local progress = if typeof(pr) == "number" then math.clamp(pr, 0, 1) else 0
 				local near = hrp ~= nil and hrp:IsA("BasePart") and (hrp.Position - part.Position).Magnitude <= SHOW_DIST
-				if progress >= 1 then
+				local sustain = a:GetAttribute("Sustain") == true -- generator: never "done", shows power on / off
+				if progress >= 1 and not sustain then
 					doneAt[a] = doneAt[a] or os.clock()
 				else
 					doneAt[a] = nil
@@ -112,8 +113,13 @@ local function update()
 					else
 						alive[a] = true
 						b.fill.Size = UDim2.fromScale(progress, 1)
-						b.fill.BackgroundColor3 = if progress >= 1 then Color3.fromRGB(110, 230, 120) else Color3.fromRGB(255, 210, 70)
-						b.label.Text = if progress >= 1 then "Power full! ⚡" else `Power {math.floor(progress * 100)}%`
+						if sustain then
+							b.fill.BackgroundColor3 = if progress > 0 then Color3.fromRGB(110, 230, 120) else Color3.fromRGB(230, 90, 80)
+							b.label.Text = if progress > 0 then "📻 Radio power ON ⚡ keep running!" else "📻 No power! Run the wheel"
+						else
+							b.fill.BackgroundColor3 = if progress >= 1 then Color3.fromRGB(110, 230, 120) else Color3.fromRGB(255, 210, 70)
+							b.label.Text = if progress >= 1 then "Power full! ⚡" else `Power {math.floor(progress * 100)}%`
+						end
 					end
 				end
 			end

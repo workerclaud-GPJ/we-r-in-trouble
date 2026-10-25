@@ -109,17 +109,26 @@ export type ObjectiveDef = {
 	-- Repair
 	duration: number?,
 	maxStack: number?,
+	sustain: boolean?, -- never completes: Progress = power charge (up while someone runs, drains when nobody does)
 	-- Deliver
 	itemType: string?,
 	minCount: number?,
 	maxCount: number?,
 	capability: string?, -- Features.CapabilitySpawn: accept any item with this capability (alternative to itemType)
 	count: number?, -- fixed item count (overrides the team-size clamp when set)
+	keepItem: boolean?, -- the held item is a tool: it is not used up (each press counts once, e.g. one screw)
+	holdDuration: number?, -- ProximityPrompt hold time (s) per press
+	requiresFlag: string?, -- MapService flag needed first (e.g. "ScissorsSharp"); else blockedHint to the presser
+	blockedWhileOn: string?, -- Switch Kind that must be OFF (e.g. "Faucet"); else blockedHint
+	blockedHint: string?,
+	progressBanner: string?, -- banner per press: "{n}" / "{count}" replaced (keepItem multi-press feedback)
 	-- MultiHold
 	anchorCount: number?,
 	mode: string?, -- "Cumulative" (Continuous is post-deadline)
 	holdTime: number?,
 	assist: boolean?,
+	needsPower: string?, -- objective id whose anchors must have power (Repair sustain Progress > 0); ignored when solo
+	noPowerHint: string?,
 	-- Escape scenarios: MapService.setFlag(setsFlag) when this objective completes
 	-- (reveals FlagReveal parts with RevealedBy = flag, e.g. the cable bridge)
 	setsFlag: string?,
@@ -150,6 +159,7 @@ export type MissionDef = {
 	startFlag: string?, -- MapService flag set before players spawn (e.g. "TableStart": spawn on the table)
 	cableThrow: boolean?, -- CableThrowService: Rope items can be cast at the map's cable hooks
 	explore: boolean?, -- HUD hides steps / markers / hints: players find the way out themselves (item book: B)
+	switchesOn: { string }?, -- Switch Kinds turned on at match start (e.g. the drain round's running faucet)
 	loot: LootTableDef?, -- this scenario's random loot (instead of Config.Loot[mapId]); fixedLoot counts toward budget
 }
 

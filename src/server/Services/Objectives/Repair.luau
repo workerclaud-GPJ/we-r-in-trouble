@@ -4,6 +4,9 @@
 	Rate +1/duration per counted holder per second; counted = first `maxStack`
 	holders by start time across all anchors; progress is kept on release;
 	credit when a holder's share reaches REPAIR_CREDIT_THRESHOLD.
+	sustain = true (a generator, e.g. the radio's wheel): never completes; Progress is the power
+	charge: up while someone runs (full in SUSTAIN_UP s), drains when nobody does (SUSTAIN_DOWN s).
+	Anchors get Sustain = true so the client bar says "power on / run!". Mark it optional.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,6 +22,9 @@ local Attr = Contract.Attr
 
 local Repair = {}
 
+local SUSTAIN_UP = 3
+local SUSTAIN_DOWN = 6
+
 function Repair.create(ctx: Common.Context): Common.Objective
 	local def = ctx.def
 	local duration = def.duration or 45
@@ -30,6 +36,20 @@ function Repair.create(ctx: Common.Context): Common.Objective
 
 	local function tick(dt: number)
 		if not ctx.isActive() then
+			return
+		end
+		if def.sustain then
+			local running = false
+			for _, target in targets do
+				if #target.holders > 0 then
+					running = true
+					for _, p in target.holders do
+						ctx.credit(p)
+					end
+				end
+			end
+			progress = math.clamp(progress + (if running then dt / SUSTAIN_UP else -dt / SUSTAIN_DOWN), 0, 1)
+			ctx.set(Attr.Progress, progress)
 			return
 		end
 		local holders: { Player } = {}
@@ -80,6 +100,9 @@ function Repair.create(ctx: Common.Context): Common.Objective
 
 	local self: Common.Objective = {
 		open = function()
+			if def.sustain then
+				ctx.set("Sustain", true)
+			end
 			removeTicker = HoldService.addTicker(tick)
 		end,
 		update = function(_dt: number) end,

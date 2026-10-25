@@ -7,8 +7,12 @@
 	  activeCount <= 1 -> 1;   required = max(1, …)
 	Progress += dt/holdTime while Held >= Required; otherwise it pauses (never decreases).
 	Debug dummy holders (spawnDummyHolder) count as held anchors.
+	needsPower = "<objective id>": progress also pauses while that objective's anchors have no power
+	(Repair sustain Progress <= 0, e.g. nobody runs the wheel); ignored when only one hamster is
+	active. Holders get noPowerHint every few seconds while it is paused for lack of power.
 ]]
 
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -18,6 +22,7 @@ local Config = require(Shared.Config)
 
 local PlayerStateService = require(script.Parent.Parent.PlayerStateService)
 local HoldService = require(script.Parent.Parent.HoldService)
+local Hud = require(script.Parent.Parent.Hud)
 local Common = require(script.Parent.Common)
 
 local Attr = Contract.Attr
@@ -85,12 +90,42 @@ function MultiHold.create(ctx: Common.Context): Common.Objective
 		HoldService.setKeepAlive(keepAliveKey, false)
 	end
 
+	local lastHint: { [Player]: number } = {}
+	local function powered(): boolean
+		local src = def.needsPower
+		if not src or PlayerStateService.activeCount() <= 1 then
+			return true
+		end
+		for _, a in CollectionService:GetTagged(Contract.Tag.ObjectiveAnchor) do
+			if a:GetAttribute(Attr.ObjectiveId) == src and a:IsDescendantOf(Workspace) then
+				local pr = a:GetAttribute(Attr.Progress)
+				if typeof(pr) == "number" and pr > 0 then
+					return true
+				end
+			end
+		end
+		return false
+	end
+
 	local function tick(dt: number)
 		if not ctx.isActive() then
 			return
 		end
 		local held, required = publish()
-		if held >= required then
+		local hasPower = powered()
+		ctx.set("NoPower", not hasPower)
+		if not hasPower and held > 0 then
+			local t = os.clock()
+			for _, slot in slots do
+				for _, p in slot.target.holders do
+					if t - (lastHint[p] or 0) > 4 then
+						lastHint[p] = t
+						Hud.bannerTo(p, "NoPower" .. def.id, def.noPowerHint or "No power!", nil, "Warn", 2.5)
+					end
+				end
+			end
+		end
+		if held >= required and hasPower then
 			progress = math.min(1, progress + dt / holdTime)
 			ctx.set(Attr.Progress, progress)
 			for _, slot in slots do

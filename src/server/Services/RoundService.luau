@@ -328,7 +328,7 @@ local function applyScenario(mission: Types.MissionDef, map: Model)
 		MapService.setFlag(mission.startFlag) -- e.g. TableStart: the table spawn pads win
 	end
 	CableThrowService.begin(mission)
-	LauncherService.begin()
+	LauncherService.begin(mission.switchesOn)
 	RoundState.set("Explore", if mission.explore then true else nil)
 	RoundState.set("SeenItems", "")
 	RoundState.set(Attr.ExitKind, mission.exitKind)
