@@ -181,8 +181,12 @@ local function land(model: Model, target: CFrame, parts: { BasePart }, collide: 
 	local colliders: { BasePart } = {}
 	for _, p in parts do
 		p.Anchored = true
-		p.CanCollide = collide[p] == true
-		if p.CanCollide then
+		-- the walk board is never solid while standing (a near-vertical board is climbable by
+		-- jumping); it becomes the ramp only once fallen
+		local solid = collide[p] == true or p == model.PrimaryPart
+		p.CanCollide = solid
+		p.CanQuery = solid
+		if solid then
 			table.insert(colliders, p)
 		end
 	end
