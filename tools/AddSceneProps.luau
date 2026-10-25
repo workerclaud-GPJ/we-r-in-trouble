@@ -89,10 +89,11 @@ fp.Parent = faucet
 local water = Instance.new("Model")
 water.Name = "Water"
 water.Parent = faucet
-local blue = Color3.fromRGB(90, 160, 230)
+local blue = Color3.fromRGB(125, 200, 255) -- light, see-through water (VisualFxController adds the flow)
 local function w(name: string, size: Vector3, cf: CFrame): Part
 	local p = P(name, size, cf, blue, Enum.Material.Glass)
-	p.Transparency = 0.35
+	p.Transparency = 0.55
+	p.Reflectance = 0.2
 	p.Parent = water
 	return p
 end
