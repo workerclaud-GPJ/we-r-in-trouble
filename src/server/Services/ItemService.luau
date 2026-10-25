@@ -387,7 +387,7 @@ onPickup = function(item: ItemRec, player: Player)
 	item.weld = weld
 	item.model:SetAttribute(Attr.Carrier, player.UserId)
 	player:SetAttribute(Attr.Holding, item.itemType)
-	PlayerStateService.setPlayerSpeedModifier(player, CARRY_KEY, carrySpeedMult(item.itemType))
+	PlayerStateService.setPlayerSpeedModifier(player, CARRY_KEY, if player:GetAttribute("NoCarrySlow") == true then nil else carrySpeedMult(item.itemType))
 end
 
 function ItemService.isHolding(player: Player, itemType: string?): boolean

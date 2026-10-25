@@ -31,6 +31,7 @@ local Hud = require(script.Parent.Hud)
 local LootService = require(script.Parent.LootService)
 local CableThrowService = require(script.Parent.CableThrowService)
 local LobbyRoomService = require(script.Parent.LobbyRoomService)
+local StyleService = require(script.Parent.StyleService)
 
 local Attr = Contract.Attr
 local Phase = Contract.Phase
@@ -409,6 +410,7 @@ local function runMatch(candidates: { Player })
 	for _, p in result.escaped do
 		PlayerStateService.setEscaped(p)
 	end
+	pcall(StyleService.reward, participants, result.escaped) -- coins for the style shop
 	RoundState.set(Attr.ResultWin, result.win)
 	RoundState.set(Attr.ResultReason, if result.win and mission.exitKind then `Escaped{mission.exitKind}` else result.reason)
 	RoundState.set(Attr.ResultTime, math.floor(math.min(now() - startedAt, R.MATCH_HARD_LIMIT)))

@@ -25,6 +25,7 @@ local RouteToppleService = require(Services.RouteToppleService)
 local CableThrowService = require(Services.CableThrowService)
 local BoatService = require(Services.BoatService)
 local LobbyRoomService = require(Services.LobbyRoomService)
+local StyleService = require(Services.StyleService)
 
 MapService.ensureLobby()
 HoldService.start()
@@ -38,4 +39,5 @@ RouteToppleService.start() -- boot check only; no-op while Config.Features.Route
 CableThrowService.start()
 BoatService.start() -- bottle-cap boat (Features.NewMission, Flood water)
 LobbyRoomService.start() -- lobby waiting rooms (Features.NewMission + LobbyRoom models)
+StyleService.start() -- coins + style shop (Config.Styles.ENABLED)
 RoundService.start()

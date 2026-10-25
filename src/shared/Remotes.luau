@@ -20,7 +20,7 @@ local RunService = game:GetService("RunService")
 
 local Contract = require(script.Parent.Contract)
 
-export type RemoteName = "ActivityPing" | "Dash" | "DebugCommand" | "DropItem" | "CastCable" | "HudBanner" | "Impact" | "ScreenEffect" | "PlayerHit" | "SetCosmetic" | "WorldEvent"
+export type RemoteName = "ActivityPing" | "Dash" | "DebugCommand" | "DropItem" | "CastCable" | "StyleShop" | "HudBanner" | "Impact" | "ScreenEffect" | "PlayerHit" | "SetCosmetic" | "WorldEvent"
 
 export type BannerPayload = {
 	key: string,
@@ -72,7 +72,7 @@ export type WorldEventPayload = {
 	velocity: Vector3?,
 }
 
-local NAMES: { RemoteName } = { "ActivityPing", "Dash", "DebugCommand", "DropItem", "CastCable", "HudBanner", "Impact", "ScreenEffect", "PlayerHit", "SetCosmetic", "WorldEvent" }
+local NAMES: { RemoteName } = { "ActivityPing", "Dash", "DebugCommand", "DropItem", "CastCable", "StyleShop", "HudBanner", "Impact", "ScreenEffect", "PlayerHit", "SetCosmetic", "WorldEvent" }
 
 local Remotes = {}
 Remotes.NAMES = NAMES
