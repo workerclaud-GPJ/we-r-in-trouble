@@ -32,6 +32,7 @@ local LootService = require(script.Parent.LootService)
 local CableThrowService = require(script.Parent.CableThrowService)
 local LobbyRoomService = require(script.Parent.LobbyRoomService)
 local StyleService = require(script.Parent.StyleService)
+local LauncherService = require(script.Parent.LauncherService)
 
 local Attr = Contract.Attr
 local Phase = Contract.Phase
@@ -263,6 +264,7 @@ local function cleanupMatch(scope: Cleanup.Cleanup)
 	ItemService.reset()
 	LootService.reset()
 	CableThrowService.reset()
+	LauncherService.reset()
 	PlayerStateService.endMatch()
 	scope:clean()
 	MapService.unloadMap()
@@ -326,6 +328,7 @@ local function applyScenario(mission: Types.MissionDef, map: Model)
 		MapService.setFlag(mission.startFlag) -- e.g. TableStart: the table spawn pads win
 	end
 	CableThrowService.begin(mission)
+	LauncherService.begin()
 	RoundState.set("Explore", if mission.explore then true else nil)
 	RoundState.set("SeenItems", "")
 	RoundState.set(Attr.ExitKind, mission.exitKind)

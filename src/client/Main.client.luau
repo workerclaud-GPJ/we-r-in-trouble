@@ -29,6 +29,7 @@ start(Controllers:WaitForChild("BoatController")) -- bottle-cap boat on flood wa
 start(Controllers:WaitForChild("WantedItemController")) -- soft sparkle on items lying in the map
 start(Controllers:WaitForChild("ItemBookController")) -- B: item book (what each item in this kitchen can do)
 start(Controllers:WaitForChild("StyleShopController")) -- lobby style shop + Ninja double jump
+start(Controllers:WaitForChild("LauncherController")) -- toaster / sponge launchers
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 

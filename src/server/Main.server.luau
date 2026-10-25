@@ -26,6 +26,7 @@ local CableThrowService = require(Services.CableThrowService)
 local BoatService = require(Services.BoatService)
 local LobbyRoomService = require(Services.LobbyRoomService)
 local StyleService = require(Services.StyleService)
+local LauncherService = require(Services.LauncherService)
 
 MapService.ensureLobby()
 HoldService.start()
@@ -40,4 +41,5 @@ CableThrowService.start()
 BoatService.start() -- bottle-cap boat (Features.NewMission, Flood water)
 LobbyRoomService.start() -- lobby waiting rooms (Features.NewMission + LobbyRoom models)
 StyleService.start() -- coins + style shop (Config.Styles.ENABLED)
+LauncherService.start() -- toaster / sponge launchers
 RoundService.start()
