@@ -123,8 +123,10 @@ local function part(model: Model, name: string, pivot: CFrame, offset: Vector3, 
 	local p = Instance.new("Part")
 	p.Name = name
 	p.Anchored = true
-	p.CanCollide = name == "Board"
-	p.CanQuery = name == "Board"
+	-- standing boards are not solid (players could jump up a near-vertical board onto the
+	-- counter); RouteToppleService.land makes the Board solid once it has fallen
+	p.CanCollide = false
+	p.CanQuery = false
 	p.CanTouch = false
 	p.Size = size
 	p.CFrame = pivot * CFrame.new(offset)

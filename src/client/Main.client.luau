@@ -30,6 +30,7 @@ start(Controllers:WaitForChild("WantedItemController")) -- soft sparkle on items
 start(Controllers:WaitForChild("ItemBookController")) -- B: item book (what each item in this kitchen can do)
 start(Controllers:WaitForChild("StyleShopController")) -- lobby style shop + Ninja double jump
 start(Controllers:WaitForChild("LauncherController")) -- toaster / sponge launchers
+start(Controllers:WaitForChild("WheelProgressController")) -- power bar over the running wheel
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 
