@@ -488,6 +488,10 @@ function PlayerStateService.damage(player: Player, amount: number, quiet: boolea
 	if not PlayerStateService.isStanding(player) or PlayerStateService.isProtected(player) then
 		return false
 	end
+	local takenMult = player:GetAttribute("DamageTakenMult") -- StyleService (Gym Hamster)
+	if typeof(takenMult) == "number" and takenMult > 0 then
+		amount *= takenMult
+	end
 	local hp = player:GetAttribute(Attr.HP)
 	local newHp = math.max(0, (if typeof(hp) == "number" then hp else P.MAX_HP) - amount)
 	player:SetAttribute(Attr.HP, newHp)

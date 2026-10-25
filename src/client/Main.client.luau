@@ -28,6 +28,7 @@ start(Controllers:WaitForChild("CableThrowController")) -- idle unless the round
 start(Controllers:WaitForChild("BoatController")) -- bottle-cap boat on flood water
 start(Controllers:WaitForChild("WantedItemController")) -- soft sparkle on items lying in the map
 start(Controllers:WaitForChild("ItemBookController")) -- B: item book (what each item in this kitchen can do)
+start(Controllers:WaitForChild("StyleShopController")) -- lobby style shop + Ninja double jump
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 
