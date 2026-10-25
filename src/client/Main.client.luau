@@ -26,6 +26,7 @@ start(Controllers:WaitForChild("DebugController"))
 start(Controllers:WaitForChild("DropController"))
 start(Controllers:WaitForChild("CableThrowController")) -- idle unless the round allows cable casting
 start(Controllers:WaitForChild("BoatController")) -- bottle-cap boat on flood water
+start(Controllers:WaitForChild("WantedItemController")) -- markers on items the step needs + boat tip
 start(Controllers:WaitForChild("ProceduralAnimController"))
 start(Controllers:WaitForChild("DashController"))
 

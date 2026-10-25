@@ -11,6 +11,7 @@ local CableThrowService = require(script.Parent.Parent.CableThrowService)
 local CableHook = {}
 
 function CableHook.create(ctx: Common.Context): Common.Objective
+	ctx.set("Wants", "Rope") -- cables get a marker while this step is open (WantedItemController)
 	local conn = CableThrowService.Attached:Connect(function(_id: string, reaches: boolean)
 		if reaches and ctx.isActive() then
 			ctx.complete()
