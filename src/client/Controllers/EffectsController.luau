@@ -89,6 +89,8 @@ local function noCollide(inst: Instance)
 	end
 end
 
+local MAX_DEBRIS_SPEED = 22 -- studs/s cap for landed debris under physics
+
 local function makeProp(name: string?): Model
 	local model = Instance.new("Model")
 	local assets = ReplicatedStorage:FindFirstChild(Contract.Folder.Assets)
@@ -260,6 +262,24 @@ local function onImpact(payload: any)
 			return
 		end
 		model:PivotTo(endCf + Vector3.new(0, 0.4, 0))
+		-- landed inside solid geometry (counter edge, table leg…)? physics would shoot it out:
+		-- keep the old still landing for this one
+		local overlap = OverlapParams.new()
+		overlap.FilterType = Enum.RaycastFilterType.Exclude
+		local exclude: { Instance } = { model }
+		for _, plr in Players:GetPlayers() do
+			if plr.Character then
+				table.insert(exclude, plr.Character)
+			end
+		end
+		overlap.FilterDescendantsInstances = exclude
+		overlap.RespectCanCollide = true
+		for _, part in parts do
+			if #Workspace:GetPartsInPart(part, overlap) > 0 then
+				model:PivotTo(endCf)
+				return
+			end
+		end
 		for i, part in parts do
 			if i > 1 then
 				local weld = Instance.new("WeldConstraint")
@@ -281,6 +301,19 @@ local function onImpact(payload: any)
 		local rng = Random.new()
 		root.AssemblyLinearVelocity = Vector3.new(rng:NextNumber(-7, 7), rng:NextNumber(9, 15), rng:NextNumber(-7, 7))
 		root.AssemblyAngularVelocity = Vector3.new(rng:NextNumber(-9, 9), rng:NextNumber(-9, 9), rng:NextNumber(-9, 9))
+		-- safety: never let a prop get launched (depenetration, stacked debris)
+		local t0 = os.clock()
+		local clamp: RBXScriptConnection
+		clamp = RunService.Heartbeat:Connect(function()
+			if not root.Parent or os.clock() - t0 > 2 then
+				clamp:Disconnect()
+				return
+			end
+			local v = root.AssemblyLinearVelocity
+			if v.Magnitude > MAX_DEBRIS_SPEED then
+				root.AssemblyLinearVelocity = v.Unit * MAX_DEBRIS_SPEED
+			end
+		end)
 	end)
 	fall:Play()
 	fadeAndDestroy(model, telegraph + math.max(0, lifetime - FADE_TIME))
