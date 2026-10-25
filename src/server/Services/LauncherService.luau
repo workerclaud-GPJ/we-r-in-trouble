@@ -29,6 +29,8 @@ local LauncherService = {}
 local conns: { RBXScriptConnection } = {}
 local last: { [Player]: number } = {}
 
+local beginSwitches: () -> ()
+
 function LauncherService.begin()
 	LauncherService.reset()
 	beginSwitches()
@@ -73,7 +75,7 @@ end
 
 -- Switches (faucet, fan): press → model attribute ActiveUntil (+ MapService flag) for the
 -- clients (BoatController streams, LauncherController wind) and BoatService.
-local function beginSwitches()
+beginSwitches = function()
 	for _, inst in MapService.tagged(SWITCH_TAG) do
 		if inst:IsA("Model") then
 			local pp = inst:FindFirstChild("PromptPart")
