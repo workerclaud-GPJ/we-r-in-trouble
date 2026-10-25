@@ -318,18 +318,35 @@ end
 function LootService.plan(seed: number, mission: Types.MissionDef, loot: Types.LootTableDef, points: { Point }): Selection
 	local fixed: { Pick } = {}
 	local missing: { string } = {}
-	for _, f in mission.fixedLoot or {} do
-		local point: Point? = nil
+	local fixedRng = Random.new(seed + 7919)
+	local taken: { [Point]: boolean } = {}
+	local function findPoint(name: string): Point?
 		for _, p in points do
-			if p.scenarioOnly and (p.name == f.spawn or string.sub(p.name, -(#f.spawn + 1)) == "." .. f.spawn) then
-				point = p
+			if p.scenarioOnly and not taken[p] and (p.name == name or string.sub(p.name, -(#name + 1)) == "." .. name) then
+				return p
+			end
+		end
+		return nil
+	end
+	for _, f in mission.fixedLoot or {} do
+		local names: { string } = if typeof(f.spawn) == "table" then table.clone(f.spawn :: { string }) else { f.spawn :: string }
+		-- shuffle the candidate spots (seeded), take the first free one
+		for i = #names, 2, -1 do
+			local j = fixedRng:NextInteger(1, i)
+			names[i], names[j] = names[j], names[i]
+		end
+		local point: Point? = nil
+		for _, n in names do
+			point = findPoint(n)
+			if point then
 				break
 			end
 		end
 		if point and Config.Items[f.itemType] then
+			taken[point] = true
 			table.insert(fixed, { itemType = f.itemType, point = point, forced = false })
 		else
-			table.insert(missing, `{f.itemType}@{f.spawn}`)
+			table.insert(missing, `{f.itemType}@{table.concat(names, "/")}`)
 		end
 	end
 	local reqs: { Requirement } = {}

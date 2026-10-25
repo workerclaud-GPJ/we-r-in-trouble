@@ -64,6 +64,7 @@ local function save(player: Player)
 		coins = player:GetAttribute("Coins"),
 		owned = player:GetAttribute("OwnedStyles"),
 		style = player:GetAttribute("Style"),
+		exits = player:GetAttribute("ExitsFound"),
 	}
 	task.spawn(function()
 		local ok, err = pcall(function()
@@ -152,6 +153,7 @@ local function load(player: Player)
 	player:SetAttribute("OwnedStyles", if typeof(data) == "table" and typeof(data.owned) == "string" then data.owned else "")
 	local style = if typeof(data) == "table" and typeof(data.style) == "string" then data.style else ""
 	player:SetAttribute("Style", if owned(player)[style] then style else "")
+	player:SetAttribute("ExitsFound", if typeof(data) == "table" and typeof(data.exits) == "string" then data.exits else "")
 	loaded[player] = true
 	applyPerks(player)
 	applyLook(player)
@@ -194,7 +196,7 @@ local function onShop(player: Player, action: any, id: any)
 end
 
 -- RoundService, end of a match: everyone who played gets coins, escapers more.
-function StyleService.reward(participants: { Player }, escaped: { Player })
+function StyleService.reward(participants: { Player }, escaped: { Player }, exitId: string?)
 	if not S.ENABLED then
 		return
 	end
@@ -209,6 +211,16 @@ function StyleService.reward(participants: { Player }, escaped: { Player })
 			p:SetAttribute("Coins", (if typeof(c) == "number" then c else 0) + add)
 			p:SetAttribute("LastReward", nil)
 			p:SetAttribute("LastReward", add)
+			-- escape journal: which ways out this hamster has found
+			if esc[p] and exitId then
+				local found = p:GetAttribute("ExitsFound")
+				local f = if typeof(found) == "string" then found else ""
+				if not string.find("," .. f .. ",", "," .. exitId .. ",", 1, true) then
+					p:SetAttribute("ExitsFound", if f == "" then exitId else f .. "," .. exitId)
+					p:SetAttribute("NewExit", nil)
+					p:SetAttribute("NewExit", exitId)
+				end
+			end
 			save(p)
 		end
 	end

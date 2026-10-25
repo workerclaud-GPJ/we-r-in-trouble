@@ -153,7 +153,9 @@ export type MissionDef = {
 	loot: LootTableDef?, -- this scenario's random loot (instead of Config.Loot[mapId]); fixedLoot counts toward budget
 }
 
-export type FixedLoot = { itemType: string, spawn: string }
+-- spawn: one ScenarioOnly ItemSpawn name, or a list (one is picked per round from the seed; two
+-- fixed items never share a point)
+export type FixedLoot = { itemType: string, spawn: string | { string } }
 
 export type ItemSize = "Small" | "Medium"
 
