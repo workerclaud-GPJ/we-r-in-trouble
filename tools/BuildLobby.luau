@@ -25,7 +25,7 @@ local O = Vector3.new(3000, 0, 0)
 local W, D = 170, 120 -- floor X, Z
 local H = 78 -- wall height
 local ROOM_COLORS = { Color3.fromRGB(235, 90, 90), Color3.fromRGB(80, 150, 235), Color3.fromRGB(110, 200, 110) }
-local ROOM_X = { -55, 0, 55 }
+local ROOM_X = { -44, 0, 44 }
 local ROOM_Z = -38
 
 local recording: string? = nil
@@ -202,19 +202,19 @@ furn.Name = "Furniture"
 furn.Parent = lobby
 
 -- bed (west): frame, legs, mattress, blanket, pillow
-local bx, bz = -W / 2 + 22, 20
-P(furn, "BedFrame", Vector3.new(40, 6, 70), at(bx, 14, bz), Color3.fromRGB(110, 75, 50), Enum.Material.Wood)
-for _, l in { { -18, -33 }, { 18, -33 }, { -18, 33 }, { 18, 33 } } do
+local bx, bz = -W / 2 + 22, 30
+P(furn, "BedFrame", Vector3.new(40, 6, 56), at(bx, 14, bz), Color3.fromRGB(110, 75, 50), Enum.Material.Wood)
+for _, l in { { -18, -26 }, { 18, -26 }, { -18, 26 }, { 18, 26 } } do
 	P(furn, "BedLeg", Vector3.new(4, 11, 4), at(bx + l[1], 5.5, bz + l[2]), Color3.fromRGB(95, 65, 45), Enum.Material.Wood)
 end
-P(furn, "Mattress", Vector3.new(38, 6, 68), at(bx, 20, bz), Color3.fromRGB(240, 240, 245), Enum.Material.Fabric)
-deco(P(furn, "Blanket", Vector3.new(39, 1.5, 44), at(bx, 23.5, bz + 12), Color3.fromRGB(90, 120, 200), Enum.Material.Fabric))
-deco(P(furn, "BlanketDrape", Vector3.new(1.5, 14, 44), at(bx + 19.6, 17, bz + 12), Color3.fromRGB(90, 120, 200), Enum.Material.Fabric))
-P(furn, "Pillow", Vector3.new(26, 5, 12), at(bx, 25, bz - 26), Color3.fromRGB(255, 250, 240), Enum.Material.Fabric)
-P(furn, "Headboard", Vector3.new(40, 30, 3), at(bx, 22, bz - 36), Color3.fromRGB(110, 75, 50), Enum.Material.Wood)
+P(furn, "Mattress", Vector3.new(38, 6, 54), at(bx, 20, bz), Color3.fromRGB(240, 240, 245), Enum.Material.Fabric)
+deco(P(furn, "Blanket", Vector3.new(39, 1.5, 36), at(bx, 23.5, bz + 9), Color3.fromRGB(90, 120, 200), Enum.Material.Fabric))
+deco(P(furn, "BlanketDrape", Vector3.new(1.5, 14, 36), at(bx + 19.6, 17, bz + 9), Color3.fromRGB(90, 120, 200), Enum.Material.Fabric))
+P(furn, "Pillow", Vector3.new(26, 5, 12), at(bx, 25, bz - 19), Color3.fromRGB(255, 250, 240), Enum.Material.Fabric)
+P(furn, "Headboard", Vector3.new(40, 30, 3), at(bx, 22, bz - 29), Color3.fromRGB(110, 75, 50), Enum.Material.Wood)
 -- teddy bear on the bed (simple balls)
 local teddy = Color3.fromRGB(180, 120, 70)
-for _, b in { { Vector3.new(10, 10, 10), Vector3.new(bx - 6, 29, bz - 20) }, { Vector3.new(7, 7, 7), Vector3.new(bx - 6, 37, bz - 20) }, { Vector3.new(3, 3, 3), Vector3.new(bx - 9, 40.5, bz - 20) }, { Vector3.new(3, 3, 3), Vector3.new(bx - 3, 40.5, bz - 20) } } do
+for _, b in { { Vector3.new(10, 10, 10), Vector3.new(bx - 6, 29, bz - 14) }, { Vector3.new(7, 7, 7), Vector3.new(bx - 6, 37, bz - 14) }, { Vector3.new(3, 3, 3), Vector3.new(bx - 9, 40.5, bz - 14) }, { Vector3.new(3, 3, 3), Vector3.new(bx - 3, 40.5, bz - 14) } } do
 	local t = deco(P(furn, "Teddy", b[1], CFrame.new(O + b[2]), teddy, Enum.Material.Fabric))
 	t.Shape = Enum.PartType.Ball
 end
@@ -365,6 +365,10 @@ for i = 1, 3 do
 	wheel.Shape = Enum.PartType.Cylinder
 	wheel.Transparency = 0.3
 
+	-- lantern above the door (warm, welcoming)
+	local lantern = deco(P(m, "Lantern", Vector3.new(2.2, 2.2, 2.2), at(cx, 16.5, cz + HD / 2 + 1.6), Color3.fromRGB(255, 210, 120), Enum.Material.Neon))
+	lantern.Shape = Enum.PartType.Ball
+	light(lantern, "PointLight", Color3.fromRGB(255, 200, 130), 30, 2.2)
 	-- zone = inside the house
 	local zone = P(m, "Zone", Vector3.new(HW - 2, 14, HD - 2), at(cx, 1 + 7, cz), Color3.fromRGB(0, 255, 0), nil, false)
 	zone.Transparency = 1
@@ -374,13 +378,20 @@ for i = 1, 3 do
 	-- sign above the door (server writes Count / Status)
 	local sign = P(m, "Sign", Vector3.new(16, 7, 0.6), at(cx, roofY + 13, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
 	sign.CanCollide = false
-	surfaceText(sign, Enum.NormalId.Front, {
+	surfaceText(sign, Enum.NormalId.Back, {
 		{ name = "Title", text = `ROOM {i}`, size = 52, color = color:Lerp(Color3.new(1, 1, 1), 0.3) },
 		{ name = "Count", text = "0/4 🐹", size = 44, color = Color3.new(1, 1, 1) },
 		{ name = "Status", text = "Walk in!", size = 36, color = Color3.fromRGB(255, 230, 150) },
 	}, 14)
 	local post = P(m, "SignPost", Vector3.new(1, 6, 1), at(cx, roofY + 8.5, cz + HD / 2 + 1), Color3.fromRGB(60, 40, 28), Enum.Material.Wood)
 	post.CanCollide = false
+end
+
+-- soft fill lights so the room reads at night (no shadows: cheap)
+for _, f in { Vector3.new(-50, 50, 10), Vector3.new(50, 50, 10), Vector3.new(0, 50, 35) } do
+	local fp = deco(P(lobby, "FillLight", Vector3.new(1, 1, 1), CFrame.new(O + f), Color3.new(1, 1, 1)))
+	fp.Transparency = 1
+	light(fp, "PointLight", Color3.fromRGB(150, 160, 230), 70, 0.9)
 end
 
 -- invisible ceiling guard over the bed / shelf tops is the real ceiling; keep players inside
