@@ -41,7 +41,7 @@ function Banner.new(parent: Instance): Banner
 	local root: Frame = UIUtil.make("Frame", {
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.26),
+		Position = UDim2.fromScale(0.5, 0.2), -- above the hamster's head
 		Size = UDim2.fromOffset(Style.Size.BannerWidth, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Style.Color.Panel,
