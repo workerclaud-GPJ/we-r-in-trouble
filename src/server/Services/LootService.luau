@@ -243,7 +243,8 @@ function LootService.requirements(mission: Types.MissionDef): { Requirement }
 	for _, step in mission.steps do
 		for _, obj in step.objectives do
 			if obj.kind == "Deliver" then
-				local need = obj.count or obj.maxCount or obj.minCount or 1
+				-- keepItem = the item is a tool reused for every press (scissors on several screws): one is enough
+				local need = if obj.keepItem then 1 else obj.count or obj.maxCount or obj.minCount or 1
 				if obj.capability then
 					table.insert(out, { capability = obj.capability, itemType = nil, need = need, label = `{obj.id}:{obj.capability}` })
 				elseif obj.itemType then
