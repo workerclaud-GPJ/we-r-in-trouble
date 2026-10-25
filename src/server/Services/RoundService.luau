@@ -30,6 +30,7 @@ local ExtractionService = require(script.Parent.ExtractionService)
 local Hud = require(script.Parent.Hud)
 local LootService = require(script.Parent.LootService)
 local CableThrowService = require(script.Parent.CableThrowService)
+local LobbyRoomService = require(script.Parent.LobbyRoomService)
 
 local Attr = Contract.Attr
 local Phase = Contract.Phase
@@ -116,8 +117,42 @@ local function readyPlayers(): { Player }
 	return out
 end
 
+-- Features.NewMission + lobby rooms: walk into a hamster house; a room's countdown ending
+-- starts the match with that room (LobbyRoomService).
+local function runRoomLobby(): { Player }
+	LobbyRoomService.setBusy(false)
+	RoundState.set(Attr.MaxPlayers, R.MAX_PLAYERS)
+	while true do
+		updateAfk()
+		local eligible = function(p: Player): boolean
+			return PlayerStateService.getState(p) == Contract.State.Lobby and p:GetAttribute(Attr.Inactive) ~= true
+		end
+		LobbyRoomService.update(eligible)
+		local endsAt, list = LobbyRoomService.soonest()
+		RoundState.set(Attr.Phase, if endsAt then Phase.Intermission else Phase.Lobby)
+		RoundState.set(Attr.PhaseEndsAt, endsAt)
+		RoundState.set(Attr.PlayersReady, #list)
+		RoundState.set(Attr.PlayersNeeded, 1)
+		if forceStartRequested then
+			forceStartRequested = false
+			local ready = if #list > 0 then list else readyPlayers()
+			if #ready >= 1 then
+				return ready
+			end
+		end
+		local go = LobbyRoomService.takeReady()
+		if #go > 0 then
+			return go
+		end
+		task.wait(R.MATCH_TICK)
+	end
+end
+
 -- Returns the participants once the intermission completes.
 local function runLobby(): { Player }
+	if Config.Features.NewMission and LobbyRoomService.enabled() then
+		return runRoomLobby()
+	end
 	RoundState.set(Attr.Phase, Phase.Lobby)
 	RoundState.set(Attr.PhaseEndsAt, nil)
 	RoundState.set(Attr.MaxPlayers, R.MAX_PLAYERS)
@@ -464,7 +499,9 @@ function RoundService.start()
 	task.spawn(function()
 		while true do
 			local participants = runLobby()
+			LobbyRoomService.setBusy(true)
 			local ok, err = pcall(runMatch :: any, participants)
+			LobbyRoomService.setBusy(false)
 			if not ok then
 				warn("[Round] match error:", err)
 				matchRunning = false

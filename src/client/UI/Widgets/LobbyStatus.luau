@@ -10,6 +10,10 @@
 	  + AFK line when the local player is flagged Inactive in the lobby.
 ]]
 
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
 local UI = script.Parent.Parent
 local StateAdapter = require(UI.StateAdapter)
 local Strings = require(UI.Strings)
@@ -25,6 +29,35 @@ export type LobbyStatus = {
 
 local T = Strings.Text
 local LobbyStatus = {}
+
+-- Lobby rooms (LobbyRoomService): the room the local hamster stands in, and the soonest room.
+local function roomInfo(): (Model?, Model?)
+	local lobby = Workspace:FindFirstChild("Lobby")
+	local char = Players.LocalPlayer.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local mine: Model? = nil
+	local soonest: Model? = nil
+	for _, inst in CollectionService:GetTagged("LobbyRoom") do
+		if inst:IsA("Model") and lobby and inst:IsDescendantOf(lobby) then
+			local zone = inst:FindFirstChild("Zone")
+			if hrp and hrp:IsA("BasePart") and zone and zone:IsA("BasePart") then
+				local lp = zone.CFrame:PointToObjectSpace(hrp.Position)
+				local h = zone.Size / 2
+				if math.abs(lp.X) <= h.X and math.abs(lp.Y) <= h.Y + 3 and math.abs(lp.Z) <= h.Z then
+					mine = inst
+				end
+			end
+			local e = inst:GetAttribute("EndsAt")
+			if typeof(e) == "number" then
+				local se = soonest and soonest:GetAttribute("EndsAt")
+				if not soonest or (typeof(se) == "number" and e < se) then
+					soonest = inst
+				end
+			end
+		end
+	end
+	return mine, soonest
+end
 
 function LobbyStatus.new(parent: Instance): LobbyStatus
 	local root = UIUtil.panel({
@@ -107,7 +140,32 @@ function LobbyStatus.new(parent: Instance): LobbyStatus
 		end
 		afk.Visible = snap.inactive
 
-		if snap.phase == "Lobby" then
+		local hasRooms = #CollectionService:GetTagged("LobbyRoom") > 0
+		-- rooms lobby: compact card (title + room line) so the houses stay visible
+		for _, name in { "HowToPlayTh", "HowToPlay", "PlayerRange", "Divider" } do
+			local c = root:FindFirstChild(name)
+			if c and c:IsA("GuiObject") then
+				c.Visible = not hasRooms
+			end
+		end
+		if hasRooms and (snap.phase == "Lobby" or snap.phase == "Intermission") then
+			local mine, soonest = roomInfo()
+			local room = mine or soonest
+			local e = room and room:GetAttribute("EndsAt")
+			local left = if typeof(e) == "number" then UIUtil.clock(math.max(0, e - snap.now)) else nil
+			local count = room and room:GetAttribute("Count") or 0
+			local cap = room and room:GetAttribute("Capacity") or 4
+			if mine then
+				title.Text = if left then `Room {mine:GetAttribute("RoomId")} starts in {left}` else `Room {mine:GetAttribute("RoomId")}`
+				sub.Text = `{count}/{cap} hamsters · waiting for friends (full = start now)`
+			elseif soonest and left then
+				title.Text = `Room {soonest:GetAttribute("RoomId")} starts in {left}`
+				sub.Text = `{count}/{cap} inside · walk into a hamster house to join!`
+			else
+				title.Text = "Walk into a hamster house to play!"
+				sub.Text = "The game starts 30 s after the first hamster walks in"
+			end
+		elseif snap.phase == "Lobby" then
 			title.Text = UIUtil.format(T.WaitingForPlayers, { n = snap.playersReady, need = snap.playersNeeded })
 			sub.Text = UIUtil.format(T.NeedPlayers, { need = snap.playersNeeded })
 		elseif snap.phase == "Intermission" then
