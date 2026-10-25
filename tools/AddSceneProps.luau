@@ -4,7 +4,11 @@
 	ServerStorage.Maps.MidnightKitchen. Idempotent: rebuilds the folder SceneProps.
 	  🍞 Toaster: press "Pop up!" at the toaster lever (east counter) → you pop out of the slot
 	     and fly onto the window sill.
-	  🧽 Kitchen sponge on the floor south of the table: land on it → bounce up onto the table.
+	  🧽 Kitchen sponge on the south end of the east counter: jump on it → bounce along the
+	     counter to the sink corner (a shortcut between places you can already walk to).
+	  🚰 Faucet: turn on → water runs across the floor; ride the stream in a bottle cap.
+	  🌀 Standing fan on the floor east of the table: 25 s of sideways wind along the floor
+	     (under the table, toward the west wall). Never lifts anyone: only speeds you up.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -53,14 +57,15 @@ CollectionService:AddTag(lever, "Launcher")
 local glow = P("ToasterSlotGlow", Vector3.new(4.6, 0.2, 2.6), CFrame.new(155, 55.15, 40), Color3.fromRGB(255, 140, 60), Enum.Material.Neon)
 glow.Transparency = 0.3
 
--- kitchen sponge trampoline (yellow foam + green scrub), floor south of the table
-local spongeCF = CFrame.new(62, 1.2, 110)
-local sponge = P("SpongeLauncher", Vector3.new(10, 2.4, 7), spongeCF, Color3.fromRGB(250, 220, 80), Enum.Material.Fabric, true)
+-- kitchen sponge trampoline (yellow foam + green scrub), east counter south end (top Y 45).
+-- Shortcut only: both ends are on the counters, reachable on foot.
+local spongeCF = CFrame.new(148, 46.2, 76)
+local sponge = P("SpongeLauncher", Vector3.new(8, 2.4, 8), spongeCF, Color3.fromRGB(250, 220, 80), Enum.Material.Fabric, true)
 sponge:SetAttribute("Mode", "Touch")
-sponge:SetAttribute("Target", Vector3.new(62, 38.25, 93)) -- table top
-sponge:SetAttribute("Flight", 0.9)
+sponge:SetAttribute("Target", Vector3.new(100, 45.05, 14)) -- north counter, by the faucet
+sponge:SetAttribute("Flight", 1.3)
 CollectionService:AddTag(sponge, "Launcher")
-P("SpongeScrub", Vector3.new(10, 0.8, 7), spongeCF * CFrame.new(0, -1.5, 0), Color3.fromRGB(70, 160, 80), Enum.Material.Fabric)
+P("SpongeScrub", Vector3.new(8, 0.8, 8), spongeCF * CFrame.new(0, -1.5, 0), Color3.fromRGB(70, 160, 80), Enum.Material.Fabric)
 
 
 -- 🚰 Faucet (north counter sink): "Turn on" once → water spills down the cabinet and runs across
@@ -105,7 +110,8 @@ end
 zone("StreamZone", Vector3.new(7, 2.2, 58), CFrame.new(62, 1.1, 60), Vector3.new(0, 0, 9))
 zone("StreamZone", Vector3.new(112, 2.2, 8), CFrame.new(96, 1.1, 88), Vector3.new(9, 0, 0))
 
--- 🌀 Fan (floor by the east counter): "Turn on" → 25 s of updraft that lifts you to the counter
+-- 🌀 Standing fan (floor east of the table, facing west): "Turn on" → 25 s of wind blowing
+-- along the floor under the table (Wind attr Push). It never lifts: only speeds you up.
 local fan = Instance.new("Model")
 fan.Name = "Fan"
 fan:SetAttribute("Kind", "Fan")
@@ -113,34 +119,39 @@ fan:SetAttribute("Action", "Turn on")
 fan:SetAttribute("Object", "Fan")
 fan:SetAttribute("Duration", 25)
 fan:SetAttribute("Banner", "Whoosh! The fan is on")
-fan:SetAttribute("BannerSub", "Ride the wind up!")
+fan:SetAttribute("BannerSub", "The wind blows along the floor")
 CollectionService:AddTag(fan, "Switch")
 fan.Parent = f
-local base = Vector3.new(125.5, 0, 47) -- wind column x 121.5..129.5: clear of the step-chair back (x <= 121)
+local base = Vector3.new(124, 0, 72) -- floor; east counter cabinet starts at x 130
 local function fpart(name: string, size: Vector3, cf: CFrame, c: Color3, mat: Enum.Material?, collide: boolean?): Part
 	local p = P(name, size, cf, c, mat, collide)
 	p.Parent = fan
 	return p
 end
 local grey = Color3.fromRGB(70, 75, 85)
-local cage = fpart("Base", Vector3.new(1, 9, 9), CFrame.new(base + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), grey, Enum.Material.Metal, true)
-cage.Shape = Enum.PartType.Cylinder
-local ring = fpart("Ring", Vector3.new(0.6, 8.6, 8.6), CFrame.new(base + Vector3.new(0, 1.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(200, 205, 215), Enum.Material.Metal)
-ring.Shape = Enum.PartType.Cylinder
-local hub = fpart("Hub", Vector3.new(1.4, 1.4, 1.4), CFrame.new(base + Vector3.new(0, 1.6, 0)), Color3.fromRGB(230, 90, 80))
+local foot = fpart("Base", Vector3.new(1, 7, 7), CFrame.new(base + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), grey, Enum.Material.Metal, true)
+foot.Shape = Enum.PartType.Cylinder
+fpart("Pole", Vector3.new(1, 8, 1), CFrame.new(base + Vector3.new(0, 4.5, 0)), grey, Enum.Material.Metal, true)
+fpart("Motor", Vector3.new(2.4, 2, 2), CFrame.new(base + Vector3.new(0.8, 9, 0)), grey, Enum.Material.Metal, true)
+local headPos = base + Vector3.new(-0.8, 9, 0)
+local ring = fpart("Ring", Vector3.new(0.6, 8.6, 8.6), CFrame.new(headPos + Vector3.new(-0.6, 0, 0)), Color3.fromRGB(200, 205, 215), Enum.Material.Metal)
+ring.Shape = Enum.PartType.Cylinder -- cylinder axis = X: the face looks west
+local hub = fpart("Hub", Vector3.new(1.2, 1.2, 1.2), CFrame.new(headPos), Color3.fromRGB(230, 90, 80))
 hub.Shape = Enum.PartType.Ball
 local blades = Instance.new("Model")
 blades.Name = "Blades"
 blades.Parent = fan
 for i = 0, 2 do
-	local b = P("Blade" .. i, Vector3.new(3.6, 0.2, 1.4), hub.CFrame * CFrame.Angles(0, math.rad(120 * i), 0) * CFrame.new(1.9, 0, 0) * CFrame.Angles(math.rad(20), 0, 0), Color3.fromRGB(120, 200, 255))
+	local b = P("Blade" .. i, Vector3.new(0.2, 3.4, 1.4), hub.CFrame * CFrame.Angles(math.rad(120 * i), 0, 0) * CFrame.new(0, 1.9, 0) * CFrame.Angles(0, math.rad(20), 0), Color3.fromRGB(120, 200, 255))
 	b.Parent = blades
 end
-blades.WorldPivot = hub.CFrame -- clients spin it round the hub
-local fpp = fpart("PromptPart", Vector3.new(2, 2, 2), CFrame.new(base + Vector3.new(-5, 2, 0)), Color3.new(1, 1, 1))
+blades.WorldPivot = hub.CFrame -- clients spin it round the hub's X axis
+local fpp = fpart("PromptPart", Vector3.new(2, 2, 2), CFrame.new(base + Vector3.new(3, 2, 3)), Color3.new(1, 1, 1))
 fpp.Transparency = 1
-local wind = fpart("Wind", Vector3.new(8, 50, 8), CFrame.new(base + Vector3.new(0, 26, 0)), Color3.fromRGB(200, 230, 255))
+-- wind: floor-level box from the fan west to x 30 (between the table legs at z 63 / 100)
+local wind = fpart("Wind", Vector3.new(92, 12, 10), CFrame.new(76, 6, 72), Color3.fromRGB(200, 230, 255))
 wind.Transparency = 1
+wind:SetAttribute("Push", Vector3.new(-14, 0, 0))
 
-print("[AddSceneProps] done: toaster launcher + sponge trampoline")
+print("[AddSceneProps] done: toaster, sponge, faucet, fan")
 return true

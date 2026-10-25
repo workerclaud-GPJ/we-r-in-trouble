@@ -88,7 +88,7 @@ local function checkTouch()
 	end
 end
 
--- Fans (Switch Kind "Fan"): while running, the Wind part lifts you up; blades spin.
+-- Fans (Switch Kind "Fan"): while running, the Wind part (attr Push) blows you sideways; blades spin.
 local spin = 0
 local function updateFans(dt: number)
 	local now = Workspace:GetServerTimeNow()
@@ -102,22 +102,18 @@ local function updateFans(dt: number)
 			local blades = inst:FindFirstChild("Blades")
 			local hub = inst:FindFirstChild("Hub")
 			if on and blades and blades:IsA("Model") and hub and hub:IsA("BasePart") then
-				blades:PivotTo(hub.CFrame * CFrame.Angles(0, spin * 14, 0))
+				blades:PivotTo(hub.CFrame * CFrame.Angles(spin * 14, 0, 0)) -- standing fan: spins round its facing (X) axis
 			end
+			-- horizontal wind along the floor: pushes you (bottle-cap boats harder) the way it blows.
+			-- Never lifts: it only speeds up a trip you could walk anyway.
 			local wind = inst:FindFirstChild("Wind")
-			if on and wind and wind:IsA("BasePart") and hrp and hrp:IsA("BasePart") and player:GetAttribute(Attr.State) == Contract.State.Standing then
+			local push = wind and wind:GetAttribute("Push")
+			if on and wind and wind:IsA("BasePart") and typeof(push) == "Vector3" and hrp and hrp:IsA("BasePart") and player:GetAttribute(Attr.State) == Contract.State.Standing then
 				local lp = wind.CFrame:PointToObjectSpace(hrp.Position)
 				local h = wind.Size / 2
 				if math.abs(lp.X) <= h.X and math.abs(lp.Y) <= h.Y and math.abs(lp.Z) <= h.Z then
-					local v = hrp.AssemblyLinearVelocity
-					local lift = if lp.Y > h.Y - 4 then 4 else 30 -- hover near the top
-					if v.Y < lift then
-						hrp.AssemblyLinearVelocity = Vector3.new(v.X, lift, v.Z)
-					end
-					local hum = char and char:FindFirstChildOfClass("Humanoid")
-					if hum and hum:GetState() ~= Enum.HumanoidStateType.Freefall then
-						hum:ChangeState(Enum.HumanoidStateType.Freefall)
-					end
+					local mult = if player:GetAttribute("Boating") == true then 1.6 else 1
+					hrp.CFrame = hrp.CFrame + Vector3.new(push.X, 0, push.Z) * mult * dt
 				end
 			end
 		end
