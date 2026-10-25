@@ -47,6 +47,8 @@ local PAGES: { [string]: { icon: string, th: string, en: string } } = {
 	},
 }
 
+local SHORT = { ChargerCable = "สายชาร์จ", Scissors = "กรรไกร", Battery = "แบตเตอรี่", Bottlecap = "ฝาขวด" }
+
 -- page 2: every way out of the kitchen and the items it takes (✅ = your team found one)
 local EXITS = {
 	{
@@ -194,7 +196,7 @@ local function buildExits(l: ScrollingFrame)
 					LayoutOrder = k, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 26),
 					BackgroundColor3 = if have then Color3.fromRGB(120, 210, 130) else Color3.fromRGB(215, 205, 190),
 					Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(40, 35, 30),
-					Text = ` {if pg then pg.icon else ""} {if have then "✅" else "⬜"} `,
+					Text = ` {if pg then pg.icon else ""} {SHORT[t] or t} {if have then "✅" else "⬜"} `,
 				}, chips)
 				make("UICorner", { CornerRadius = UDim.new(0, 8) }, chip)
 				make("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }, chip)
