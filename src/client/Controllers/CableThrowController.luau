@@ -127,7 +127,7 @@ local function buildUi()
 		Name = "Panel",
 		-- right side, above the Dash / Drop buttons: keeps the centre (your hamster) clear
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -24, 1, -190),
+		Position = UDim2.new(1, -24, 1, -300),
 		Size = UDim2.fromOffset(300, 96),
 		BackgroundColor3 = Color3.fromRGB(25, 28, 40),
 		BackgroundTransparency = 0.15,
