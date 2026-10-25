@@ -5,6 +5,8 @@
 	    and what each can do. No counts, no unknown slots: players search the kitchen themselves.
 	  Page 2 · Exits: every way out of the kitchen with the items it takes (✅ = found this
 	    round). The secret exit stays "???" until you have escaped through it (ExitsFound).
+	  Page 3 · Hints: vague riddles for each found item (what it might work with), plus a rumor
+	    about the secret exit. Nudges only, never the answer.
 	It never says which exit this round has: players work it out from what they find.
 ]]
 
@@ -46,6 +48,29 @@ local PAGES: { [string]: { icon: string, th: string, en: string } } = {
 		en = "Floats. Hold it and walk into deep water to sail across faster.",
 	},
 }
+
+-- page 3: riddles, deliberately vague (a nudge, never the answer); shown only for items found
+local RIDDLES: { [string]: { string } } = {
+	ChargerCable = {
+		"ที่ใดมีตะขอรอคอย ที่นั่นมีทางข้ามฟ้า",
+		"จะลงไปในความมืดลึก ต้องมีอะไรให้เกาะไว้ก่อน",
+		"แต่สายน้ำที่ไหลลงไม่หยุด จะไม่ยอมให้ใครลงไปง่ายๆ",
+	},
+	Scissors = {
+		"สิ่งที่ถูกตรึงด้วยเกลียวเหล็ก แพ้ทางปลายแหลม",
+		"ใบมีดที่ไม่คม ต้องไปทักทายหินสักก้อนก่อน",
+		"ลมข้างนอกรออยู่หลังกระจก เหนือที่ที่น้ำไหลลง",
+	},
+	Battery = {
+		"เสียงที่จะไปถึงคนไกล ต้องมีประกายไฟเริ่มต้น",
+		"วงกลมที่หมุนวน ยิ่งวิ่งยิ่งสว่าง… และต้องไม่หยุด",
+	},
+	Bottlecap = {
+		"ของเล็กที่ไม่ยอมจม รู้จักทางของน้ำดี",
+		"เมื่อพื้นกลายเป็นแม่น้ำ อย่าว่าย… จงล่อง",
+	},
+}
+local RUMOR = "ข่าวลือ: หนูตัวเก่ารู้ทางลับ ซ่อนอยู่หลังสิ่งที่มีกลิ่นเท้า…"
 
 local SHORT = { ChargerCable = "สายชาร์จ", Scissors = "กรรไกร", Battery = "แบตเตอรี่", Bottlecap = "ฝาขวด" }
 
@@ -210,6 +235,40 @@ local function buildExits(l: ScrollingFrame)
 	end
 end
 
+-- page 3: hints (riddles) for the items your team has found
+local function buildHints(l: ScrollingFrame)
+	local seen = seenItems()
+	local n = 0
+	for _, t in ORDER do
+		local lines = RIDDLES[t]
+		local pg = PAGES[t]
+		if lines and pg and seen[t] then
+			n += 1
+			local text = ""
+			for _, line in lines do
+				text ..= "• " .. line .. "\n"
+			end
+			local row = make("Frame", { Name = t, LayoutOrder = n, Size = UDim2.new(1, 0, 0, 30 + #lines * 22), BackgroundColor3 = Color3.fromRGB(245, 232, 205) }, l)
+			make("UICorner", { CornerRadius = UDim.new(0, 10) }, row)
+			make("TextLabel", { Size = UDim2.fromOffset(56, 56), BackgroundTransparency = 1, Text = pg.icon, TextSize = 32, Font = Enum.Font.GothamBold }, row)
+			make("TextLabel", {
+				Position = UDim2.fromOffset(60, 6), Size = UDim2.new(1, -66, 0, 20), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+				Font = Enum.Font.FredokaOne, TextSize = 17, TextColor3 = Color3.fromRGB(90, 55, 30), Text = SHORT[t] or t,
+			}, row)
+			make("TextLabel", {
+				Position = UDim2.fromOffset(60, 28), Size = UDim2.new(1, -66, 1, -30), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, Font = Enum.Font.GothamMedium, TextSize = 13, LineHeight = 1.15,
+				TextColor3 = Color3.fromRGB(70, 50, 40), Text = text,
+			}, row)
+		end
+	end
+	local foot = make("Frame", { Name = "Foot", LayoutOrder = 999, Size = UDim2.new(1, 0, 0, 52), BackgroundTransparency = 1 }, l)
+	make("TextLabel", {
+		Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, TextWrapped = true, Font = Enum.Font.GothamMedium, TextSize = 13, TextColor3 = Color3.fromRGB(255, 225, 170),
+		Text = (if n == 0 then "ยังไม่มีคำใบ้ — หาไอเทมให้เจอก่อนนะ\n" else "") .. "🐭 " .. RUMOR,
+	}, foot)
+end
+
 local lastSig = ""
 local function refreshPages(force: boolean?)
 	local l = list
@@ -225,11 +284,15 @@ local function refreshPages(force: boolean?)
 	clear(l)
 	if page == "Exits" then
 		buildExits(l)
+	elseif page == "Hints" then
+		buildHints(l)
 	else
 		buildItems(l)
 	end
 	if subtitle then
-		subtitle.Text = if page == "Exits" then "ทางออกทั้งหมด และไอเทมที่ต้องใช้ — ✅ = ทีมเจอแล้ว" else "ไอเทมที่ทีมเจอแล้ว ใช้ทำอะไรได้บ้าง"
+		subtitle.Text = if page == "Exits" then "ทางออกทั้งหมด และไอเทมที่ต้องใช้ — ✅ = ทีมเจอแล้ว"
+			elseif page == "Hints" then "คำใบ้ลึกลับของไอเทมที่เจอแล้ว… ลองตีความดู"
+			else "ไอเทมที่ทีมเจอแล้ว ใช้ทำอะไรได้บ้าง"
 	end
 	for id, b in tabs do
 		b.BackgroundColor3 = if id == page then Color3.fromRGB(255, 210, 110) else Color3.fromRGB(150, 95, 60)
@@ -267,7 +330,7 @@ local function build()
 		Font = Enum.Font.FredokaOne, TextSize = 24, TextColor3 = Color3.fromRGB(255, 225, 150), Text = "📖 Hamster's Book",
 	}, b)
 	-- tabs
-	for i, def in { { id = "Items", text = "1 · ไอเทม" }, { id = "Exits", text = "2 · ทางออก" } } do
+	for i, def in { { id = "Items", text = "1 · ไอเทม" }, { id = "Exits", text = "2 · ทางออก" }, { id = "Hints", text = "3 · คำใบ้" } } do
 		local t = make("TextButton", {
 			Position = UDim2.fromOffset(16 + (i - 1) * 132, 44), Size = UDim2.fromOffset(124, 30), BackgroundColor3 = Color3.fromRGB(150, 95, 60),
 			Font = Enum.Font.FredokaOne, TextSize = 16, TextColor3 = Color3.fromRGB(50, 30, 15), Text = def.text,
