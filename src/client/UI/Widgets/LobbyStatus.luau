@@ -141,6 +141,13 @@ function LobbyStatus.new(parent: Instance): LobbyStatus
 		afk.Visible = snap.inactive
 
 		local hasRooms = #CollectionService:GetTagged("LobbyRoom") > 0
+		-- rooms lobby: compact card (title + room line) so the houses stay visible
+		for _, name in { "HowToPlayTh", "HowToPlay", "PlayerRange", "Divider" } do
+			local c = root:FindFirstChild(name)
+			if c and c:IsA("GuiObject") then
+				c.Visible = not hasRooms
+			end
+		end
 		if hasRooms and (snap.phase == "Lobby" or snap.phase == "Intermission") then
 			local mine, soonest = roomInfo()
 			local room = mine or soonest

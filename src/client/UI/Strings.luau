@@ -84,8 +84,8 @@ local OBJECTIVE: { [string]: string } = {
 Strings.Text = table.freeze({
 	-- Lobby
 	GameTitle = "We R in Trouble",
-	HowToPlayTh = "ช่วยกันทำภารกิจ แล้วหนีออกทางหน้าต่าง!",
-	HowToPlay = "Work together, then escape through the window!",
+	HowToPlayTh = "ช่วยกันทำภารกิจ แล้วหนีออกจากครัวให้ได้!",
+	HowToPlay = "Work together and escape the kitchen!",
 	PlayerRange = "Needs 2–4 players",
 	WaitingForPlayers = "Waiting for players ({n}/{need})", -- GDD 2.1 exact wording
 	NeedPlayers = "Need {need} hamsters to start. Invite a friend!",
