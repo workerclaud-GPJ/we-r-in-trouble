@@ -88,6 +88,8 @@ local function refreshPages(force: boolean?)
 	for _, t in ORDER do
 		table.insert(parts, `{t}{have0[t] or 0}`)
 	end
+	local rs0 = ReplicatedStorage:FindFirstChild("RoundState")
+	table.insert(parts, tostring(rs0 and rs0:GetAttribute("SeenItems")))
 	local sig = table.concat(parts, ",")
 	if sig == lastSig and not force then
 		return
@@ -99,10 +101,32 @@ local function refreshPages(force: boolean?)
 		end
 	end
 	local have = itemTypes()
+	local rs = ReplicatedStorage:FindFirstChild("RoundState")
+	local seenCsv = rs and rs:GetAttribute("SeenItems")
+	local seen: { [string]: boolean } = {}
+	if typeof(seenCsv) == "string" then
+		for _, t in string.split(seenCsv, ",") do
+			seen[t] = true
+		end
+	end
 	local n = 0
 	for _, t in ORDER do
 		local page = PAGES[t]
-		if page and have[t] then
+		if page and have[t] and not seen[t] then
+			-- not picked up by anyone yet this round: unknown page
+			n += 1
+			local row = make("Frame", { Name = t, LayoutOrder = 100 + n, Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = Color3.fromRGB(225, 215, 195) }, l)
+			make("UICorner", { CornerRadius = UDim.new(0, 10) }, row)
+			make("TextLabel", { Size = UDim2.fromOffset(60, 56), BackgroundTransparency = 1, Text = "❓", TextSize = 30, Font = Enum.Font.GothamBold }, row)
+			make("TextLabel", {
+				Position = UDim2.fromOffset(64, 6), Size = UDim2.new(1, -70, 0, 20), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+				Font = Enum.Font.FredokaOne, TextSize = 19, TextColor3 = Color3.fromRGB(110, 90, 70), Text = `???  ×{have[t]}`,
+			}, row)
+			make("TextLabel", {
+				Position = UDim2.fromOffset(64, 28), Size = UDim2.new(1, -70, 0, 22), BackgroundTransparency = 1, TextXAlignment = Enum.TextXAlignment.Left,
+				Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = Color3.fromRGB(90, 75, 60), Text = "ยังไม่รู้ว่าคืออะไร — หาแล้วหยิบขึ้นมาดูก่อน · Find it and pick it up",
+			}, row)
+		elseif page and have[t] then
 			n += 1
 			local def = Config.Items[t]
 			local row = make("Frame", { Name = t, LayoutOrder = n, Size = UDim2.new(1, 0, 0, 74), BackgroundColor3 = Color3.fromRGB(250, 240, 215), BackgroundTransparency = 0 }, l)

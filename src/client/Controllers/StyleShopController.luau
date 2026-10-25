@@ -29,6 +29,80 @@ local shopBtn: TextButton? = nil
 local listFrame: ScrollingFrame? = nil
 local coinsLabel: TextLabel? = nil
 local toast: TextLabel? = nil
+local journalBtn: TextButton? = nil
+local journalPanel: Frame? = nil
+
+local EXITS = {
+	{ id = "Carrier", name = "🚗 Rescue carrier" },
+	{ id = "Window", name = "🌙 The window" },
+	{ id = "Drain", name = "💧 The drain" },
+}
+
+local function foundSet(): { [string]: boolean }
+	local out: { [string]: boolean } = {}
+	local csv = player:GetAttribute("ExitsFound")
+	if typeof(csv) == "string" then
+		for _, id in string.split(csv, ",") do
+			out[id] = true
+		end
+	end
+	return out
+end
+
+local function refreshJournal()
+	local f = foundSet()
+	local n = 0
+	for _, e in EXITS do
+		if f[e.id] then
+			n += 1
+		end
+	end
+	if journalBtn then
+		journalBtn.Text = `📔 Escapes {n}/{#EXITS}`
+	end
+	local jp = journalPanel
+	if not jp then
+		return
+	end
+	for _, c in jp:GetChildren() do
+		if c:IsA("TextLabel") then
+			c:Destroy()
+		end
+	end
+	local title = Instance.new("TextLabel")
+	title.LayoutOrder = 0
+	title.Size = UDim2.new(1, -12, 0, 24)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.FredokaOne
+	title.TextSize = 18
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = Color3.fromRGB(255, 225, 150)
+	title.Text = `Escape journal  {n}/{#EXITS}`
+	title.Parent = jp
+	for i, e in EXITS do
+		local l = Instance.new("TextLabel")
+		l.LayoutOrder = i
+		l.Size = UDim2.new(1, -12, 0, 22)
+		l.BackgroundTransparency = 1
+		l.Font = Enum.Font.FredokaOne
+		l.TextSize = 16
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		l.TextColor3 = if f[e.id] then Color3.fromRGB(140, 240, 150) else Color3.fromRGB(170, 170, 190)
+		l.Text = if f[e.id] then `✅ {e.name}` else "❔ ??? (not found yet)"
+		l.Parent = jp
+	end
+	local hint = Instance.new("TextLabel")
+	hint.LayoutOrder = 10
+	hint.Size = UDim2.new(1, -12, 0, 30)
+	hint.BackgroundTransparency = 1
+	hint.Font = Enum.Font.Gotham
+	hint.TextSize = 12
+	hint.TextWrapped = true
+	hint.TextXAlignment = Enum.TextXAlignment.Left
+	hint.TextColor3 = Color3.fromRGB(200, 200, 220)
+	hint.Text = "ทุกรอบทางออกไม่เหมือนกัน — หาให้ครบ!"
+	hint.Parent = jp
+end
 
 local function make(className: string, props: { [string]: any }, parent: Instance?): any
 	local i = Instance.new(className)
@@ -151,9 +225,26 @@ local function build()
 	}, p)
 	make("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }, scroll)
 	toast = make("TextLabel", {
-		AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.fromOffset(300, 40), BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.fromOffset(520, 40), BackgroundTransparency = 1,
 		Font = Enum.Font.FredokaOne, TextSize = 30, TextColor3 = Color3.fromRGB(255, 220, 90), TextStrokeTransparency = 0.2, Text = "", Visible = false,
 	}, g)
+	-- escape journal (which ways out you have found; names hidden until found)
+	local jBtn = make("TextButton", {
+		Name = "JournalButton", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0.5, 134), Size = UDim2.fromOffset(150, 40),
+		BackgroundColor3 = Color3.fromRGB(70, 110, 170), Text = "📔 Escapes 0/3", Font = Enum.Font.FredokaOne, TextSize = 18, TextColor3 = Color3.new(1, 1, 1), Visible = false,
+	}, g)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, jBtn)
+	local jPanel = make("Frame", {
+		Name = "Journal", AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 168, 0.5, 80), Size = UDim2.fromOffset(250, 150),
+		BackgroundColor3 = Color3.fromRGB(40, 50, 80), BackgroundTransparency = 0.05, Visible = false,
+	}, g)
+	make("UICorner", { CornerRadius = UDim.new(0, 12) }, jPanel)
+	make("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, jPanel)
+	make("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingTop = UDim.new(0, 8) }, jPanel)
+	jBtn.Activated:Connect(function()
+		jPanel.Visible = not jPanel.Visible
+	end)
+	journalBtn, journalPanel = jBtn, jPanel
 	btn.Activated:Connect(function()
 		p.Visible = not p.Visible
 		if p.Visible then
@@ -233,6 +324,27 @@ function StyleShopController.start()
 			end
 		end)
 	end
+	refreshJournal()
+	player:GetAttributeChangedSignal("ExitsFound"):Connect(refreshJournal)
+	player:GetAttributeChangedSignal("NewExit"):Connect(function()
+		local id = player:GetAttribute("NewExit")
+		local t = toast
+		if typeof(id) == "string" and t then
+			local name = id
+			for _, e in EXITS do
+				if e.id == id then
+					name = e.name
+				end
+			end
+			task.delay(3.2, function()
+				t.Text = `🎉 New escape found: {name}!`
+				t.Visible = true
+				task.delay(4, function()
+					t.Visible = false
+				end)
+			end)
+		end
+	end)
 	player:GetAttributeChangedSignal("LastReward"):Connect(function()
 		local r = player:GetAttribute("LastReward")
 		local t = toast
@@ -253,6 +365,12 @@ function StyleShopController.start()
 		acc = 0
 		local inLobby = player:GetAttribute(Attr.State) == Contract.State.Lobby
 		local b = shopBtn
+		if journalBtn then
+			journalBtn.Visible = inLobby
+		end
+		if journalPanel and not inLobby then
+			journalPanel.Visible = false
+		end
 		if b then
 			b.Visible = inLobby
 			b.Text = `🛒 Shop · {coins()} 💰`

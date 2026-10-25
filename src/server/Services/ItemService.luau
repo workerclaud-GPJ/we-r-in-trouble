@@ -29,6 +29,7 @@ local Config = require(Shared.Config)
 local Remotes = require(Shared.Remotes)
 
 local MapService = require(script.Parent.MapService)
+local RoundState = require(script.Parent.RoundState)
 local PlayerStateService = require(script.Parent.PlayerStateService)
 local DisasterService = require(script.Parent.DisasterService)
 local Geometry = require(Shared.Util.Geometry)
@@ -387,6 +388,12 @@ onPickup = function(item: ItemRec, player: Player)
 	item.weld = weld
 	item.model:SetAttribute(Attr.Carrier, player.UserId)
 	player:SetAttribute(Attr.Holding, item.itemType)
+	-- item book: this item type is now known to the team (ItemBookController shows it)
+	local seen = RoundState.get("SeenItems")
+	local seenStr = if typeof(seen) == "string" then seen else ""
+	if not string.find("," .. seenStr .. ",", "," .. item.itemType .. ",", 1, true) then
+		RoundState.set("SeenItems", if seenStr == "" then item.itemType else seenStr .. "," .. item.itemType)
+	end
 	PlayerStateService.setPlayerSpeedModifier(player, CARRY_KEY, if player:GetAttribute("NoCarrySlow") == true then nil else carrySpeedMult(item.itemType))
 end
 

@@ -142,6 +142,16 @@ local SPAWNS: { { name: string, pos: Vector3, note: string } } = {
 	{ name = "Scn_CounterW", pos = Vector3.new(58, 45, 25), note = "window: scissors, north counter west of the dish rack" },
 	{ name = "Scn_Pantry", pos = Vector3.new(12, 0, 28), note = "drain: scissors, floor by the pantry door" },
 	{ name = "Scn_BackCorner", pos = Vector3.new(150, 0, 100), note = "drain: charger cable, floor corner by the back door" },
+	-- hiding spots (MissionDef.fixedLoot spawn lists pick one per round)
+	{ name = "Scn_TableFruit", pos = Vector3.new(94, 38.25, 99), note = "table top, behind the fruit bowl" },
+	{ name = "Scn_TableEdge", pos = Vector3.new(44, 38.25, 99), note = "table top, far west corner" },
+	{ name = "Scn_UnderTable2", pos = Vector3.new(52, 0, 98), note = "floor under the table, by a leg" },
+	{ name = "Scn_UnderChair", pos = Vector3.new(104, 0, 50), note = "floor under the step chair" },
+	{ name = "Scn_BehindCurtain", pos = Vector3.new(14, 0, 14), note = "floor behind the curtain" },
+	{ name = "Scn_ShoeRack", pos = Vector3.new(115, 0, 110), note = "floor under the shoe rack shelf" },
+	{ name = "Scn_CageTray", pos = Vector3.new(19, 0, 115), note = "in the cage, by the tray wall" },
+	{ name = "Scn_CounterE", pos = Vector3.new(150, 45, 80), note = "east counter, south end" },
+	{ name = "Scn_SinkSide", pos = Vector3.new(114, 45, 24), note = "north counter, east of the sink" },
 }
 for _, def in SPAWNS do
 	local p = part(itemSpawns, def.name, Vector3.new(2, 1, 2), CFrame.new(def.pos + Vector3.new(0, 0.5, 0)), Color3.fromRGB(80, 160, 255))

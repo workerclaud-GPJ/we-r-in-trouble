@@ -321,6 +321,7 @@ local function applyScenario(mission: Types.MissionDef, map: Model)
 	end
 	CableThrowService.begin(mission)
 	RoundState.set("Explore", if mission.explore then true else nil)
+	RoundState.set("SeenItems", "")
 	RoundState.set(Attr.ExitKind, mission.exitKind)
 	RoundState.set(Attr.ScenarioId, mission.id)
 	print(`[Round] scenario {mission.id} (exit {mission.exitKind or "Carrier"})`)
@@ -410,7 +411,7 @@ local function runMatch(candidates: { Player })
 	for _, p in result.escaped do
 		PlayerStateService.setEscaped(p)
 	end
-	pcall(StyleService.reward, participants, result.escaped) -- coins for the style shop
+	pcall(StyleService.reward, participants, result.escaped, if result.win then (mission.exitKind or "Carrier") else nil) -- coins + escape journal
 	RoundState.set(Attr.ResultWin, result.win)
 	RoundState.set(Attr.ResultReason, if result.win and mission.exitKind then `Escaped{mission.exitKind}` else result.reason)
 	RoundState.set(Attr.ResultTime, math.floor(math.min(now() - startedAt, R.MATCH_HARD_LIMIT)))

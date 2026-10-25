@@ -72,9 +72,15 @@ local NO_COOKBOOK_RAMP = { "Ramp2_Cookbooks_Collider", "Ramp2_Cookbooks_Visual" 
 -- do not belong to another exit, so the items you find tell you which way out this round is.
 -- Bottlecaps are clutter for now (future: the bottle-cap raft escape).
 local CLUTTER = { { itemType = "Bottlecap", weight = 1 } }
+-- Key items hide in a random spot each round (tools/AddEscapeScenarios.luau Scn_* points).
+-- Reachability: table-start rounds put cables on the table or the floor (never the counter: the
+-- counter needs a cable first); the drain round (cage start) uses floor spots only.
+local CABLE_SPOTS_TABLE = { "Scn_Table1", "Scn_Table2", "Scn_TableFruit", "Scn_TableEdge", "Scn_UnderTable2", "Scn_UnderChair", "Scn_BehindCurtain" }
+local FLOOR_SPOTS = { "Scn_Pantry", "Scn_BackCorner", "Scn_UnderTable2", "Scn_UnderChair", "Scn_BehindCurtain", "Scn_ShoeRack", "Scn_CageTray" }
+local COUNTER_OR_FLOOR = { "Scn_CounterW", "Scn_CounterE", "Scn_SinkSide", "Scn_ShoeRack", "Scn_Pantry", "Scn_BackCorner" }
 local TABLE_CABLES = {
-	{ itemType = "ChargerCable", spawn = "Scn_Table1" },
-	{ itemType = "ChargerCable", spawn = "Scn_Table2" },
+	{ itemType = "ChargerCable", spawn = CABLE_SPOTS_TABLE },
+	{ itemType = "ChargerCable", spawn = CABLE_SPOTS_TABLE },
 }
 
 -- 1) Call for help, table start. Everyone starts on the dining table with two charger cables:
@@ -132,7 +138,7 @@ MISSIONS.MidnightKitchen_CableWindow = {
 	fixedLoot = {
 		TABLE_CABLES[1],
 		TABLE_CABLES[2],
-		{ itemType = "Scissors", spawn = "Scn_CounterW" },
+		{ itemType = "Scissors", spawn = COUNTER_OR_FLOOR },
 	},
 	loot = { budget = 6, entries = CLUTTER }, -- 2 cables + scissors + 3 bottlecaps
 	steps = {
@@ -176,8 +182,8 @@ MISSIONS.MidnightKitchen_Drain = {
 	winCamera = "DrainCameraPoint",
 	hideParts = NO_COOKBOOK_RAMP,
 	fixedLoot = {
-		{ itemType = "Scissors", spawn = "Scn_Pantry" },
-		{ itemType = "ChargerCable", spawn = "Scn_BackCorner" },
+		{ itemType = "Scissors", spawn = FLOOR_SPOTS },
+		{ itemType = "ChargerCable", spawn = FLOOR_SPOTS },
 	},
 	loot = { budget = 5, entries = CLUTTER }, -- scissors + cable + 3 bottlecaps
 	steps = {
