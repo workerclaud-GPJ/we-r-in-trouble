@@ -582,8 +582,8 @@ playerSpawn(fSpawns, "Spawn_Sill2", 76, 61, 5, 1, EXIT_FLAG)
 
 itemSpawn(fItems, "Battery_T1", 52, 0, 90, "T") -- under the table, south-west
 itemSpawn(fItems, "Battery_T2", 94, 0, 68, "T") -- under the table, north-east
-itemSpawn(fItems, "Battery_S1", 111, 0, 112, "S") -- inside the shoe rack, between the shoes
-itemSpawn(fItems, "Battery_S2", 90, 0, 112, "S") -- west of the shoe rack
+itemSpawn(fItems, "Battery_S1", 104, 0, 100, "S") -- floor in front of the shoe rack (was inside it: unreachable)
+itemSpawn(fItems, "Battery_S2", 90, 0, 94, "S") -- floor under the table, east side (was inside a shoe)
 itemSpawn(fItems, "Battery_P1", 8, 0, 40, "P") -- by the pantry door
 itemSpawn(fItems, "Battery_P2", 6, 0, 8, "P") -- behind the curtain, under the west shelf
 

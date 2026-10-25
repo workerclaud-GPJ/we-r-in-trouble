@@ -34,8 +34,8 @@ local PAGES: { [string]: { icon: string, th: string, en: string } } = {
 	},
 	Scissors = {
 		icon = "✂️",
-		th = "ใช้ตัดหรืองัดของที่ล็อกหรือติดแน่นได้ แต่ตอนนี้ทื่ออยู่ ต้องเอาไปลับให้คมก่อน 🪨",
-		en = "Cut + Pry. Blunt at first: sharpen it before prying anything.",
+		th = "ใช้ตัดหรืองัดของที่ล็อกหรือติดแน่นได้… ถ้ามันพร้อม",
+		en = "Cut + Pry… when it is ready.",
 	},
 	Battery = {
 		icon = "🔋",
@@ -80,19 +80,19 @@ local EXITS = {
 		id = "Window", icon = "🌙", color = Color3.fromRGB(70, 90, 170),
 		th = "หน้าต่างเหนือซิงก์", en = "The window",
 		items = { "ChargerCable", "Scissors" },
-		how = "ลับกรรไกร ขึ้นเคาน์เตอร์ แงะน็อตกลอนให้ครบ (1 ตัวต่อ 1 คน) แล้วช่วยกันดันหน้าต่าง",
+		how = "แงะกลอนให้หลุดทุกตัว แล้วช่วยกันดันหน้าต่าง",
 	},
 	{
 		id = "Drain", icon = "💧", color = Color3.fromRGB(60, 140, 170),
 		th = "ท่อระบายน้ำใต้ซิงก์", en = "The drain",
 		items = { "Scissors", "ChargerCable" },
-		how = "ลับกรรไกร แงะตะแกรง ช่วยกันยก ปิดก๊อกน้ำ แล้วผูกเชือกโรยตัวลงไป",
+		how = "แงะตะแกรง ช่วยกันยก แล้วหาทางลงไป",
 	},
 	{
 		id = "Carrier", icon = "📞", color = Color3.fromRGB(190, 110, 50),
 		th = "ขอความช่วยเหลือทางวิทยุ", en = "Call for help",
 		items = { "Battery" },
-		how = "ใส่แบตให้เครื่อง แล้วให้คนหนึ่งวิ่งวงล้อไว้ ขณะที่คนอื่นตะโกนที่วิทยุ",
+		how = "ปลุกเครื่องให้ตื่น แล้วส่งเสียงให้ไปไกลที่สุด",
 	},
 	{
 		id = "MouseHole", icon = "🐭", color = Color3.fromRGB(110, 80, 60), secret = true,
