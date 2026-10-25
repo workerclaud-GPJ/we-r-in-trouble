@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Contract = require(Shared.Contract)
+local Sound = require(script.Parent.Fx.Sound)
 
 local ENABLED = true
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -62,7 +63,7 @@ end
 -- faucet water
 ----------------------------------------------------------------------------
 
-type WaterFx = { parts: { BasePart }, beams: { Beam }, emitters: { ParticleEmitter } }
+type WaterFx = { parts: { BasePart }, beams: { Beam }, emitters: { ParticleEmitter }, soundAt: Part?, sound: Sound? }
 local water: WaterFx? = nil
 
 -- a beam lying along `from` -> `to`, `width` wide; flat = lies on the floor (else faces the camera)
@@ -149,7 +150,7 @@ local function buildWater(map: Instance)
 	if not w then
 		return
 	end
-	local fx: WaterFx = { parts = {}, beams = {}, emitters = {} }
+	local fx: WaterFx = { parts = {}, beams = {}, emitters = {}, soundAt = nil, sound = nil }
 	local function part(name: string): BasePart?
 		local p = w:FindFirstChild(name)
 		return if p and p:IsA("BasePart") then p else nil
@@ -162,6 +163,9 @@ local function buildWater(map: Instance)
 			local top = p.Position + Vector3.new(0, p.Size.Y / 2, 0)
 			local bottom = p.Position - Vector3.new(0, p.Size.Y / 2, 0)
 			table.insert(fx.beams, flowBeam(top, bottom, math.max(p.Size.X, p.Size.Z) * 0.95, false, 4))
+			if name == "Waterfall" then
+				fx.soundAt = holder("WaterSound", CFrame.new(bottom + Vector3.new(0, 2, 0)))
+			end
 			for _, e in splash(bottom + Vector3.new(0, 0.3, 0), if name == "Spout" then 0.5 else 1, if name == "Spout" then 18 else 30) do
 				table.insert(fx.emitters, e)
 			end
@@ -211,6 +215,13 @@ local function updateWater()
 	end
 	for _, e in fx.emitters do
 		e.Enabled = on
+	end
+	-- running-water loop (3D, at the foot of the waterfall) while the tap is on
+	if on and not fx.sound and fx.soundAt then
+		fx.sound = Sound.loop("WaterRun", fx.soundAt)
+	elseif not on and fx.sound then
+		fx.sound:Destroy()
+		fx.sound = nil
 	end
 end
 
@@ -399,6 +410,42 @@ local function buildAmbient(map: Instance)
 end
 
 ----------------------------------------------------------------------------
+-- sound hooks: a click when an objective takes an item / tool press (Delivered goes up) and when
+-- a switch (tap, fan, sharpener) changes; a pop when you pick something up
+----------------------------------------------------------------------------
+
+local function anchorPos(inst: Instance): Vector3?
+	if inst:IsA("BasePart") then
+		return inst.Position
+	elseif inst:IsA("Model") then
+		return inst:GetPivot().Position
+	end
+	return nil
+end
+
+local function hookSounds(map: Instance)
+	for _, a in CollectionService:GetTagged(Contract.Tag.ObjectiveAnchor) do
+		if a:IsDescendantOf(map) then
+			local last = a:GetAttribute(Contract.Attr.Delivered)
+			table.insert(conns, a:GetAttributeChangedSignal(Contract.Attr.Delivered):Connect(function()
+				local d = a:GetAttribute(Contract.Attr.Delivered)
+				if typeof(d) == "number" and d > (if typeof(last) == "number" then last else 0) then
+					Sound.play("BatteryInsert", anchorPos(a))
+				end
+				last = d
+			end))
+		end
+	end
+	for _, sw in CollectionService:GetTagged("Switch") do
+		if sw:IsDescendantOf(map) then
+			table.insert(conns, sw:GetAttributeChangedSignal("ActiveUntil"):Connect(function()
+				Sound.play("BatteryInsert", anchorPos(sw))
+			end))
+		end
+	end
+end
+
+----------------------------------------------------------------------------
 -- lifecycle: rebuilt for every match map (Workspace.Map)
 ----------------------------------------------------------------------------
 
@@ -425,6 +472,7 @@ local function setup(map: Instance)
 	local ok, err = pcall(function()
 		buildWater(map)
 		buildAmbient(map)
+		hookSounds(map)
 	end)
 	if not ok then
 		warn("[VisualFx]", err)
@@ -450,6 +498,14 @@ function VisualFxController.start()
 		end
 	end
 	Workspace.ChildAdded:Connect(onChild)
+	-- pickup pop (2D, local player only)
+	local me = Players.LocalPlayer
+	me:GetAttributeChangedSignal(Contract.Attr.Holding):Connect(function()
+		local h = me:GetAttribute(Contract.Attr.Holding)
+		if typeof(h) == "string" and h ~= "" then
+			Sound.play("RespawnPop", nil, 0.6)
+		end
+	end)
 	Workspace.ChildRemoved:Connect(function(child: Instance)
 		if child.Name == "Map" then
 			teardown()
